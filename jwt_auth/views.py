@@ -23,6 +23,7 @@ import jwt
 import uuid
 from datetime import timedelta
 from user_agents import parse
+from authencation_example.auth_utils import safe_login
 
 
 # Custom JWT Token Serializer
@@ -241,7 +242,7 @@ def jwt_register(request):
             password = form.cleaned_data.get('password1')
 
             # Auto login after registration
-            login(request, user)
+            safe_login(request, user)
 
             # Create JWT session
             try:

@@ -10,6 +10,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 import hashlib
 import uuid
+from authencation_example.auth_utils import safe_login
 
 
 def cookie_auth_home(request):
@@ -91,7 +92,7 @@ def cookie_register(request):
             username = form.cleaned_data.get('username')
 
             # Auto login after registration
-            login(request, user)
+            safe_login(request, user)
 
             # Create response with redirect
             response = redirect('cookie_auth:dashboard')

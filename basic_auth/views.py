@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
+from authencation_example.auth_utils import safe_login
 
 
 def basic_auth_home(request):
@@ -44,7 +45,7 @@ def basic_register(request):
             user = form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Account created for {username}!')
-            login(request, user)
+            safe_login(request, user)
             return redirect('basic_auth:dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')

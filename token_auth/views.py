@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import APIToken, TokenUsageLog
 import json
+from authencation_example.auth_utils import safe_login
 
 
 # Custom Token Authentication Class
@@ -126,7 +127,7 @@ def token_register(request):
             username = form.cleaned_data.get('username')
 
             # Auto login after registration
-            login(request, user)
+            safe_login(request, user)
 
             # Create initial API token
             token = APIToken.objects.create(
