@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Cookie Authentication - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mb-4">🍪 Cookie-Based Authentication</h1>
+        <p class="text-center text-muted">Advanced cookie management and secure session handling</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="auth-method">
+            <h3>🍪 Cookie Authentication Features</h3>
+            <p>This implementation demonstrates advanced cookie-based authentication with enhanced security and user experience features.</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🔒 Security Features</h5>
+                    <ul>
+                        <li><strong>HttpOnly cookies</strong> - Prevent XSS attacks</li>
+                        <li><strong>Secure flag</strong> - HTTPS only in production</li>
+                        <li><strong>SameSite protection</strong> - CSRF prevention</li>
+                        <li><strong>Token-based auth</strong> - Custom authentication tokens</li>
+                        <li><strong>Automatic cleanup</strong> - Proper cookie deletion</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>✨ User Experience</h5>
+                    <ul>
+                        <li><strong>Remember me</strong> - Long-term sessions</li>
+                        <li><strong>User preferences</strong> - Stored in cookies</li>
+                        <li><strong>Session management</strong> - Flexible expiry</li>
+                        <li><strong>Cookie dashboard</strong> - View all cookies</li>
+                        <li><strong>Settings page</strong> - Manage preferences</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                {% if user.is_authenticated %}
+                    <div class="alert alert-success">
+                        <strong>✅ You are logged in!</strong><br>
+                        Welcome back, {{ user.username }}!
+                    </div>
+                    <a href="{% url 'cookie_auth:dashboard' %}" class="btn btn-primary me-2">Cookie Dashboard</a>
+                    <a href="{% url 'cookie_auth:profile' %}" class="btn btn-outline-primary me-2">Profile</a>
+                    <a href="{% url 'cookie_auth:cookie_settings' %}" class="btn btn-outline-secondary me-2">Cookie Settings</a>
+                    <a href="{% url 'cookie_auth:logout' %}" class="btn btn-outline-danger">Logout</a>
+                {% else %}
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Not authenticated</strong><br>
+                        Please log in to experience cookie-based authentication.
+                    </div>
+                    <a href="{% url 'cookie_auth:login' %}" class="btn btn-primary me-2">Login</a>
+                    <a href="{% url 'cookie_auth:register' %}" class="btn btn-outline-primary me-2">Register</a>
+                    <a href="{% url 'cookie_auth:cookie_settings' %}" class="btn btn-outline-secondary">View Cookies</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔍 Current Cookie Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="cookie-status">
+                    <p>Loading cookie information...</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" onclick="checkCookieStatus()">Refresh Status</button>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📚 How It Works</h5>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li><strong>Login:</strong> Creates secure authentication cookie</li>
+                    <li><strong>Session:</strong> Manages session expiry and preferences</li>
+                    <li><strong>Security:</strong> Uses HttpOnly, Secure, and SameSite flags</li>
+                    <li><strong>Cleanup:</strong> Properly deletes cookies on logout</li>
+                    <li><strong>Management:</strong> Provides tools to view and manage cookies</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>🔗 Other Authentication Methods</h4>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔐 Basic Auth</h6>
+                        <a href="/basic/" class="btn btn-outline-primary btn-sm">Try Basic</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎫 JWT Auth</h6>
+                        <a href="/jwt/" class="btn btn-outline-success btn-sm">Try JWT</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔑 OAuth</h6>
+                        <a href="/oauth/" class="btn btn-outline-info btn-sm">Try OAuth</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎟️ Token Auth</h6>
+                        <a href="/token/" class="btn btn-outline-warning btn-sm">Try Token</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkCookieStatus() {
+    fetch('/cookie/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('cookie-status');
+            let statusHtml = '';
+            
+            if (data.authenticated) {
+                statusHtml += `
+                    <div class="alert alert-success alert-sm">
+                        <strong>✅ Authenticated</strong><br>
+                        User: ${data.username} (ID: ${data.user_id})
+                    </div>
+                `;
+            } else {
+                statusHtml += `
+                    <div class="alert alert-warning alert-sm">
+                        <strong>❌ Not Authenticated</strong>
+                    </div>
+                `;
+            }
+            
+            statusHtml += `
+                <div class="small">
+                    <strong>Cookie Info:</strong><br>
+                    • Total cookies: ${data.cookies_count}<br>
+                    • Auth token: ${data.has_auth_token ? '✅' : '❌'}<br>
+                    • User prefs: ${data.has_user_prefs ? '✅' : '❌'}<br>
+                    • Session: ${data.session_key ? data.session_key.substring(0, 8) + '...' : 'None'}
+                </div>
+            `;
+            
+            if (data.recently_logged_out) {
+                statusHtml += `
+                    <div class="alert alert-info alert-sm mt-2">
+                        <small>Recently logged out</small>
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('cookie-status').innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <strong>Error checking status</strong>
+                </div>
+            `;
+        });
+}
+
+// Check status on page load
+document.addEventListener('DOMContentLoaded', checkCookieStatus);
+
+// Auto-refresh every 30 seconds
+setInterval(checkCookieStatus, 30000);
+</script>
+{% endblock %}

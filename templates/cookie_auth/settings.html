@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}Cookie Settings - Cookie Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">⚙️ Cookie Settings & Management</h1>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>🍪 Cookie Preferences</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="set_preference">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="theme" class="form-label">🎨 Theme Preference</label>
+                                <select class="form-select" id="theme" name="theme">
+                                    <option value="light" {% if current_prefs.theme == 'light' %}selected{% endif %}>Light</option>
+                                    <option value="dark" {% if current_prefs.theme == 'dark' %}selected{% endif %}>Dark</option>
+                                    <option value="auto" {% if current_prefs.theme == 'auto' %}selected{% endif %}>Auto</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="language" class="form-label">🌐 Language</label>
+                                <select class="form-select" id="language" name="language">
+                                    <option value="en" {% if current_prefs.language == 'en' %}selected{% endif %}>English</option>
+                                    <option value="vi" {% if current_prefs.language == 'vi' %}selected{% endif %}>Tiếng Việt</option>
+                                    <option value="es" {% if current_prefs.language == 'es' %}selected{% endif %}>Español</option>
+                                    <option value="fr" {% if current_prefs.language == 'fr' %}selected{% endif %}>Français</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">💾 Save Preferences to Cookie</button>
+                </form>
+                
+                {% if current_prefs %}
+                <div class="mt-3">
+                    <h6>Current Preferences:</h6>
+                    <ul class="list-unstyled small">
+                        {% for key, value in current_prefs.items %}
+                        <li><strong>{{ key|title }}:</strong> {{ value }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🧹 Cookie Management</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>⚠️ Warning:</strong> Clearing cookies will log you out and remove all stored preferences.
+                </div>
+                
+                <form method="post" onsubmit="return confirmClearCookies()">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="clear_all">
+                    <button type="submit" class="btn btn-outline-danger">
+                        🗑️ Clear All Custom Cookies
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔍 Current Cookies</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cookie_name, cookie_value in all_cookies.items %}
+                            <tr>
+                                <td><code class="small">{{ cookie_name }}</code></td>
+                                <td>
+                                    {% if cookie_name == 'auth_token' %}
+                                        <span class="badge bg-success">Auth</span>
+                                    {% elif cookie_name == 'user_prefs' or cookie_name == 'user_preferences' %}
+                                        <span class="badge bg-info">Prefs</span>
+                                    {% elif cookie_name == 'sessionid' %}
+                                        <span class="badge bg-primary">Session</span>
+                                    {% elif cookie_name == 'csrftoken' %}
+                                        <span class="badge bg-warning">CSRF</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Other</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted">No cookies</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshCookies()">
+                    🔄 Refresh List
+                </button>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🛠️ Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'cookie_auth:dashboard' %}" class="btn btn-primary">
+                        📊 Dashboard
+                    </a>
+                    <a href="{% url 'cookie_auth:profile' %}" class="btn btn-outline-primary">
+                        👤 Profile
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'cookie_auth:home' %}" class="btn btn-outline-info">
+                        🏠 Home
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'cookie_auth:logout' %}" class="btn btn-outline-danger">
+                        🚪 Logout
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>ℹ️ Cookie Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <h6>🔒 Security Features:</h6>
+                    <ul>
+                        <li><strong>HttpOnly:</strong> Prevents XSS attacks</li>
+                        <li><strong>Secure:</strong> HTTPS only (production)</li>
+                        <li><strong>SameSite:</strong> CSRF protection</li>
+                    </ul>
+                    
+                    <h6>🍪 Cookie Types:</h6>
+                    <ul>
+                        <li><strong>Auth Token:</strong> Authentication</li>
+                        <li><strong>User Prefs:</strong> Your preferences</li>
+                        <li><strong>Session:</strong> Django session</li>
+                        <li><strong>CSRF:</strong> Security token</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>📊 Cookie Analytics</h5>
+            </div>
+            <div class="card-body">
+                <div id="cookie-analytics">
+                    <p>Loading cookie analytics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmClearCookies() {
+    return confirm('Are you sure you want to clear all custom cookies? This will log you out and remove all preferences.');
+}
+
+function refreshCookies() {
+    location.reload();
+}
+
+function loadCookieAnalytics() {
+    fetch('/cookie/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            const analyticsDiv = document.getElementById('cookie-analytics');
+            
+            let analyticsHtml = `
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">${data.cookies_count}</h4>
+                            <small>Total Cookies</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="${data.authenticated ? 'text-success' : 'text-danger'}">${data.authenticated ? '✅' : '❌'}</h4>
+                            <small>Authentication</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="${data.has_auth_token ? 'text-success' : 'text-warning'}">${data.has_auth_token ? '✅' : '❌'}</h4>
+                            <small>Auth Token</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="${data.has_user_prefs ? 'text-info' : 'text-muted'}">${data.has_user_prefs ? '✅' : '❌'}</h4>
+                            <small>User Preferences</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (data.recently_logged_out) {
+                analyticsHtml += `
+                    <div class="alert alert-info mt-3">
+                        <small>🔄 Recently logged out - some cookies may have been cleared</small>
+                    </div>
+                `;
+            }
+            
+            analyticsDiv.innerHTML = analyticsHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('cookie-analytics').innerHTML = `
+                <div class="alert alert-danger">
+                    <small>Error loading cookie analytics</small>
+                </div>
+            `;
+        });
+}
+
+// Load analytics on page load
+document.addEventListener('DOMContentLoaded', loadCookieAnalytics);
+
+// Auto-refresh analytics every 30 seconds
+setInterval(loadCookieAnalytics, 30000);
+
+// Show feedback when preferences are saved
+{% if messages %}
+    {% for message in messages %}
+        {% if message.tags == 'success' %}
+            // Show success animation or notification
+            console.log('Preferences saved successfully!');
+        {% endif %}
+    {% endfor %}
+{% endif %}
+</script>
+{% endblock %}

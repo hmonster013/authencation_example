@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Cookie Authentication{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">🍪 Cookie Authentication Login</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">
+                                {% for error in form.username.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                        <label class="form-check-label" for="remember_me">
+                            Remember me (30 days) 🍪
+                        </label>
+                        <small class="form-text text-muted d-block">
+                            This will create a long-term authentication cookie
+                        </small>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Login with Cookies</button>
+                    </div>
+                </form>
+
+                <hr>
+                <div class="text-center">
+                    <p>Don't have an account? <a href="{% url 'cookie_auth:register' %}">Register here</a></p>
+                    <p><a href="{% url 'cookie_auth:home' %}">← Back to Cookie Auth Home</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h5>🍪 Cookie Authentication Features:</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>🔒 Secure Cookies:</strong> HttpOnly, Secure, SameSite flags
+                        </li>
+                        <li class="list-group-item">
+                            <strong>⏰ Flexible Expiry:</strong> Session or long-term cookies
+                        </li>
+                        <li class="list-group-item">
+                            <strong>🎯 Custom Tokens:</strong> Generated authentication tokens
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>👤 User Preferences:</strong> Stored in secure cookies
+                        </li>
+                        <li class="list-group-item">
+                            <strong>🧹 Auto Cleanup:</strong> Proper cookie deletion on logout
+                        </li>
+                        <li class="list-group-item">
+                            <strong>📊 Cookie Dashboard:</strong> View and manage all cookies
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6>🔍 Current Cookies</h6>
+                </div>
+                <div class="card-body">
+                    <div id="current-cookies">
+                        <p>Loading cookie information...</p>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="showCurrentCookies()">Refresh Cookies</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add Bootstrap classes to form fields
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+    inputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+    
+    // Show current cookies on page load
+    showCurrentCookies();
+});
+
+function showCurrentCookies() {
+    fetch('/cookie/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            const cookiesDiv = document.getElementById('current-cookies');
+            let cookiesHtml = '';
+            
+            if (data.cookies_count > 0) {
+                cookiesHtml += `
+                    <div class="small">
+                        <strong>Total cookies: ${data.cookies_count}</strong><br>
+                        • Authentication token: ${data.has_auth_token ? '✅ Present' : '❌ Not set'}<br>
+                        • User preferences: ${data.has_user_prefs ? '✅ Present' : '❌ Not set'}<br>
+                        • Session ID: ${data.session_key ? data.session_key.substring(0, 12) + '...' : 'None'}
+                    </div>
+                `;
+                
+                if (data.recently_logged_out) {
+                    cookiesHtml += `
+                        <div class="alert alert-info alert-sm mt-2">
+                            <small>🔄 Recently logged out - cookies were cleared</small>
+                        </div>
+                    `;
+                }
+            } else {
+                cookiesHtml = `
+                    <div class="text-muted small">
+                        No authentication cookies found. Login to create secure cookies.
+                    </div>
+                `;
+            }
+            
+            cookiesDiv.innerHTML = cookiesHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('current-cookies').innerHTML = `
+                <div class="text-danger small">
+                    Error loading cookie information
+                </div>
+            `;
+        });
+}
+
+// Show tooltip for remember me checkbox
+document.getElementById('remember_me').addEventListener('change', function() {
+    const label = document.querySelector('label[for="remember_me"]');
+    if (this.checked) {
+        label.innerHTML = 'Remember me (30 days) 🍪 <span class="text-success">✓ Enabled</span>';
+    } else {
+        label.innerHTML = 'Remember me (30 days) 🍪';
+    }
+});
+</script>
+{% endblock %}

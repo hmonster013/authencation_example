@@ -1,0 +1,282 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Cookie Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">🍪 Cookie Authentication Dashboard</h1>
+        <div class="alert alert-success">
+            <strong>Welcome, {{ user.username }}!</strong> You are successfully authenticated using cookie-based authentication.
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔐 Authentication Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Username:</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>User ID:</strong></td>
+                        <td>{{ user.id }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ user.email|default:"Not set" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Login:</strong></td>
+                        <td>{{ user.last_login|default:"First login" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Joined:</strong></td>
+                        <td>{{ user.date_joined }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🍪 Cookie Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Auth Token:</strong></td>
+                        <td><code class="small">{{ auth_token }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Session Key:</strong></td>
+                        <td><code class="small">{{ session_key|default:"Not available" }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Session Expiry:</strong></td>
+                        <td>{{ session_expiry|default:"Browser session" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total Cookies:</strong></td>
+                        <td>{{ all_cookies|length }}</td>
+                    </tr>
+                </table>
+                
+                {% if user_prefs %}
+                <h6 class="mt-3">👤 User Preferences:</h6>
+                <ul class="list-unstyled small">
+                    {% for key, value in user_prefs.items %}
+                    <li><strong>{{ key|title }}:</strong> {{ value }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🛠️ Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'cookie_auth:profile' %}" class="btn btn-primary">
+                        👤 View Profile
+                    </a>
+                    <a href="{% url 'cookie_auth:cookie_settings' %}" class="btn btn-outline-secondary">
+                        ⚙️ Cookie Settings
+                    </a>
+                    <a href="{% url 'cookie_auth:home' %}" class="btn btn-outline-info">
+                        🏠 Back to Home
+                    </a>
+                    <a href="{% url 'cookie_auth:logout' %}" class="btn btn-outline-danger">
+                        🚪 Logout & Clear Cookies
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📊 Live Cookie Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="live-status">
+                    <p>Loading live status...</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" onclick="refreshStatus()">
+                    🔄 Refresh Status
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔍 All Cookies (Debug View)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Cookie Name</th>
+                                <th>Value (truncated)</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cookie_name, cookie_value in all_cookies.items %}
+                            <tr>
+                                <td><code>{{ cookie_name }}</code></td>
+                                <td class="small">
+                                    {% if cookie_value|length > 50 %}
+                                        {{ cookie_value|slice:":50" }}...
+                                    {% else %}
+                                        {{ cookie_value }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if cookie_name == 'auth_token' %}
+                                        <span class="badge bg-success">Auth</span>
+                                    {% elif cookie_name == 'user_prefs' %}
+                                        <span class="badge bg-info">Prefs</span>
+                                    {% elif cookie_name == 'sessionid' %}
+                                        <span class="badge bg-primary">Session</span>
+                                    {% elif cookie_name == 'csrftoken' %}
+                                        <span class="badge bg-warning">CSRF</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Other</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No cookies found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <small>
+                        <strong>🔒 Security Note:</strong> Authentication cookies are HttpOnly and cannot be accessed via JavaScript. 
+                        This view shows server-side cookie information for educational purposes.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h5>🎯 Try Other Authentication Methods</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔐 Basic Auth</h6>
+                        <p class="small">Traditional session-based</p>
+                        <a href="/basic/" class="btn btn-outline-primary btn-sm">Try Basic</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎫 JWT Auth</h6>
+                        <p class="small">Stateless tokens</p>
+                        <a href="/jwt/" class="btn btn-outline-success btn-sm">Try JWT</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔑 OAuth</h6>
+                        <p class="small">Third-party login</p>
+                        <a href="/oauth/" class="btn btn-outline-info btn-sm">Try OAuth</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎟️ Token Auth</h6>
+                        <p class="small">API tokens</p>
+                        <a href="/token/" class="btn btn-outline-warning btn-sm">Try Token</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshStatus() {
+    const statusDiv = document.getElementById('live-status');
+    statusDiv.innerHTML = '<p class="text-muted">Refreshing...</p>';
+    
+    fetch('/cookie/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            let statusHtml = `
+                <div class="small">
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Authentication:</strong><br>
+                            ${data.authenticated ? '✅ Active' : '❌ Inactive'}<br>
+                            <strong>User:</strong> ${data.username || 'None'}<br>
+                            <strong>User ID:</strong> ${data.user_id || 'None'}
+                        </div>
+                        <div class="col-6">
+                            <strong>Cookies:</strong><br>
+                            Total: ${data.cookies_count}<br>
+                            Auth Token: ${data.has_auth_token ? '✅' : '❌'}<br>
+                            User Prefs: ${data.has_user_prefs ? '✅' : '❌'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (data.recently_logged_out) {
+                statusHtml += `
+                    <div class="alert alert-warning alert-sm mt-2">
+                        <small>Recently logged out</small>
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <small>Error refreshing status</small>
+                </div>
+            `;
+        });
+}
+
+// Auto-refresh status every 30 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStatus();
+    setInterval(refreshStatus, 30000);
+});
+</script>
+{% endblock %}

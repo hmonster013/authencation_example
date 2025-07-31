@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Cookie Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-4">👤 User Profile</h1>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>📋 Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>{{ user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ user.email|default:"Not set" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>First Name:</strong></td>
+                                <td>{{ user.first_name|default:"Not set" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Name:</strong></td>
+                                <td>{{ user.last_name|default:"Not set" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Date Joined:</strong></td>
+                                <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Login:</strong></td>
+                                <td>{{ user.last_login|date:"M d, Y H:i"|default:"First login" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Active:</strong></td>
+                                <td>{{ user.is_active|yesno:"Yes,No" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Staff:</strong></td>
+                                <td>{{ user.is_staff|yesno:"Yes,No" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🍪 Cookie & Session Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>📊 Statistics</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Total Cookies:</strong> {{ cookies_count }}</li>
+                            <li><strong>User Agent:</strong> <small>{{ user_agent|truncatechars:50 }}</small></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>🔧 Session Data</h6>
+                        {% if session_data %}
+                        <ul class="list-unstyled small">
+                            {% for key, value in session_data.items %}
+                            <li><strong>{{ key }}:</strong> 
+                                {% if value|length > 30 %}
+                                    {{ value|truncatechars:30 }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-muted small">No session data available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>🛠️ Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'cookie_auth:dashboard' %}" class="btn btn-primary">
+                        📊 Dashboard
+                    </a>
+                    <a href="{% url 'cookie_auth:cookie_settings' %}" class="btn btn-outline-secondary">
+                        ⚙️ Cookie Settings
+                    </a>
+                    <a href="{% url 'cookie_auth:home' %}" class="btn btn-outline-info">
+                        🏠 Home
+                    </a>
+                    <a href="{% url 'cookie_auth:logout' %}" class="btn btn-outline-danger">
+                        🚪 Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🔒 Security Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="security-status">
+                    <p>Loading security information...</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" onclick="checkSecurity()">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>💡 Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small">
+                    <li>🍪 Your authentication cookies are secure and HttpOnly</li>
+                    <li>🔒 Session data is stored server-side</li>
+                    <li>⏰ Cookies expire based on your login preferences</li>
+                    <li>🧹 Logout will clear all authentication cookies</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h5>🔗 Explore Other Authentication Methods</h5>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔐 Basic Auth</h6>
+                        <p class="small">Session-based authentication</p>
+                        <a href="/basic/profile/" class="btn btn-outline-primary btn-sm">Basic Profile</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎫 JWT Auth</h6>
+                        <p class="small">Token-based authentication</p>
+                        <a href="/jwt/" class="btn btn-outline-success btn-sm">JWT Profile</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔑 OAuth</h6>
+                        <p class="small">Social authentication</p>
+                        <a href="/oauth/" class="btn btn-outline-info btn-sm">OAuth Profile</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎟️ Token Auth</h6>
+                        <p class="small">API token authentication</p>
+                        <a href="/token/" class="btn btn-outline-warning btn-sm">Token Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkSecurity() {
+    const statusDiv = document.getElementById('security-status');
+    statusDiv.innerHTML = '<p class="text-muted small">Checking security...</p>';
+    
+    fetch('/cookie/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            let securityHtml = `
+                <div class="small">
+                    <div class="mb-2">
+                        <strong>Authentication:</strong><br>
+                        ${data.authenticated ? 
+                            '<span class="text-success">✅ Authenticated</span>' : 
+                            '<span class="text-danger">❌ Not authenticated</span>'
+                        }
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Cookies:</strong><br>
+                        Auth Token: ${data.has_auth_token ? 
+                            '<span class="text-success">✅</span>' : 
+                            '<span class="text-danger">❌</span>'
+                        }<br>
+                        User Prefs: ${data.has_user_prefs ? 
+                            '<span class="text-success">✅</span>' : 
+                            '<span class="text-danger">❌</span>'
+                        }<br>
+                        Total: ${data.cookies_count}
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Session:</strong><br>
+                        ${data.session_key ? 
+                            '<span class="text-success">✅ Active</span>' : 
+                            '<span class="text-warning">⚠️ No session</span>'
+                        }
+                    </div>
+                </div>
+            `;
+            
+            if (data.recently_logged_out) {
+                securityHtml += `
+                    <div class="alert alert-info alert-sm mt-2">
+                        <small>🔄 Recently logged out</small>
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = securityHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <small>Error checking security status</small>
+                </div>
+            `;
+        });
+}
+
+// Check security status on page load
+document.addEventListener('DOMContentLoaded', checkSecurity);
+
+// Auto-refresh every 60 seconds
+setInterval(checkSecurity, 60000);
+</script>
+{% endblock %}
