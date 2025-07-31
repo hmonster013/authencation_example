@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Token Authentication - Token Detail{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>🔍 Token Details</h1>
+        <p class="text-muted">Detailed information and usage logs for your API token</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔑 Token Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Name:</strong></td>
+                        <td>{{ token.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Token:</strong></td>
+                        <td><code>{{ token.get_masked_token }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Type:</strong></td>
+                        <td>
+                            <span class="badge bg-{% if token.token_type == 'access' %}primary{% elif token.token_type == 'refresh' %}success{% else %}info{% endif %}">
+                                {{ token.get_token_type_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            {% if token.is_valid %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif token.is_expired %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td>{{ token.created_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Expires:</strong></td>
+                        <td>{{ token.expires_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Used:</strong></td>
+                        <td>{{ token.last_used|date:"M d, Y H:i:s"|default:"Never" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Usage Count:</strong></td>
+                        <td>
+                            {{ token.usage_count }}
+                            {% if token.max_usage %}
+                                / {{ token.max_usage }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🛡️ Security Settings</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Scopes:</strong></td>
+                        <td>
+                            {% for scope in token.scopes %}
+                                <span class="badge bg-secondary me-1">{{ scope }}</span>
+                            {% empty %}
+                                <span class="text-muted">No scopes</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>IP Whitelist:</strong></td>
+                        <td>
+                            {% if token.ip_whitelist %}
+                                {% for ip in token.ip_whitelist %}
+                                    <code class="small">{{ ip }}</code><br>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted">Any IP allowed</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>User Agent:</strong></td>
+                        <td class="small">{{ token.user_agent|default:"Not recorded" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🚀 Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'token_auth:token_management' %}" class="btn btn-outline-primary">
+                        ← Back to Management
+                    </a>
+                    <a href="{% url 'token_auth:dashboard' %}" class="btn btn-outline-secondary">
+                        Dashboard
+                    </a>
+                    {% if token.is_active %}
+                        <button class="btn btn-outline-warning" onclick="extendToken()">
+                            Extend Expiry
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="revokeToken()">
+                            Revoke Token
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>📊 Usage Logs</h5>
+                <span class="badge bg-info">{{ usage_count }} total uses</span>
+            </div>
+            <div class="card-body">
+                {% if page_obj %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>IP Address</th>
+                                    <th>User Agent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in page_obj %}
+                                <tr>
+                                    <td class="small">{{ log.timestamp|date:"M d, H:i:s" }}</td>
+                                    <td class="small">
+                                        <code>{{ log.endpoint }}</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if log.method == 'GET' %}info{% elif log.method == 'POST' %}success{% elif log.method == 'PUT' %}warning{% elif log.method == 'DELETE' %}danger{% else %}secondary{% endif %} badge-sm">
+                                            {{ log.method }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ log.ip_address }}</td>
+                                    <td class="small" title="{{ log.user_agent }}">
+                                        {{ log.user_agent|truncatechars:30 }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Usage log pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">&laquo; First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No usage logs</h5>
+                        <p class="text-muted">This token hasn't been used yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🧪 Test This Token</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">Test your token by making an API call:</p>
+                <div class="mb-3">
+                    <label class="form-label">API Endpoint:</label>
+                    <select class="form-select" id="test-endpoint">
+                        <option value="/token/api/user/">GET /token/api/user/ - User Profile</option>
+                        <option value="/token/api/token/info/">GET /token/api/token/info/ - Token Info</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline-success" onclick="testToken()">Test API Call</button>
+                <div id="test-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden forms for token actions -->
+<form id="revokeForm" method="post" action="{% url 'token_auth:token_management' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="revoke_token">
+    <input type="hidden" name="token_id" value="{{ token.id }}">
+</form>
+
+<form id="extendForm" method="post" action="{% url 'token_auth:token_management' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="extend_token">
+    <input type="hidden" name="token_id" value="{{ token.id }}">
+    <input type="hidden" name="days" id="extendDays" value="30">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function revokeToken() {
+    if (confirm(`Are you sure you want to revoke the token "{{ token.name }}"? This action cannot be undone.`)) {
+        document.getElementById('revokeForm').submit();
+    }
+}
+
+function extendToken() {
+    const days = prompt(`How many days would you like to extend the token "{{ token.name }}"?`, '30');
+    if (days && !isNaN(days) && parseInt(days) > 0) {
+        document.getElementById('extendDays').value = parseInt(days);
+        document.getElementById('extendForm').submit();
+    }
+}
+
+function testToken() {
+    const endpoint = document.getElementById('test-endpoint').value;
+    const resultDiv = document.getElementById('test-result');
+    
+    resultDiv.innerHTML = '<div class="alert alert-info">Testing API call...</div>';
+    
+    fetch(endpoint, {
+        headers: {
+            'Authorization': 'Token {{ token.token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.user_id || data.token_name) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>✅ API Success</strong><br>
+                    <pre class="small mt-2">${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>❌ API Error</strong><br>
+                    ${data.error || 'Unexpected response'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Request Failed</strong><br>
+                ${error.message}
+            </div>
+        `;
+    });
+}
+</script>
+{% endblock %}

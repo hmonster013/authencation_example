@@ -20,10 +20,17 @@ A comprehensive Django project demonstrating different authentication methods in
 - **Real-time cookie status monitoring**
 - **Educational cookie information** and management tools
 
+### ✅ Token Authentication (Completed)
+- **Enterprise-grade API token system** with multiple token types
+- **Advanced security features** (IP whitelisting, usage limits, scoped permissions)
+- **Comprehensive token management** with web interface and REST API
+- **Usage analytics and monitoring** with detailed logs
+- **Token refresh mechanism** for long-term integrations
+- **Developer-friendly API** with clear documentation
+
 ### 🔄 Planned Authentication Methods
 - **JWT Authentication** - JSON Web Token based stateless authentication
 - **OAuth Authentication** - Third-party login (Google, GitHub)
-- **Token Authentication** - Simple API token-based auth
 
 ## 📋 Requirements
 
@@ -71,6 +78,9 @@ python manage.py runserver
 
 7. **Access the application**
 - Main page: http://127.0.0.1:8000/
+- Basic Auth: http://127.0.0.1:8000/basic/
+- Cookie Auth: http://127.0.0.1:8000/cookie/
+- Token Auth: http://127.0.0.1:8000/token/
 - Admin panel: http://127.0.0.1:8000/admin/
 
 ## 🔐 Basic Authentication Features
@@ -163,6 +173,52 @@ python manage.py runserver
 - ✅ Custom authentication token generation
 - ✅ Configurable session expiry based on user preference
 
+## 🎟️ Token Authentication Features
+
+### Available Endpoints
+- `/token/` - Home page with token authentication overview
+- `/token/login/` - User login with optional API token creation
+- `/token/register/` - User registration with automatic API key generation
+- `/token/logout/` - User logout with session cleanup
+- `/token/dashboard/` - Protected dashboard with token statistics
+- `/token/profile/` - User profile with usage analytics
+- `/token/management/` - Comprehensive token management interface
+- `/token/token/<id>/` - Detailed token view with usage logs
+- `/token/api/user/` - API endpoint for user profile (requires token)
+- `/token/api/token/info/` - API endpoint for token information
+- `/token/api/token/create/` - API endpoint to create new tokens
+- `/token/api/token/refresh/` - API endpoint to refresh tokens
+- `/token/api/token/revoke/` - API endpoint to revoke tokens
+- `/token/api/status/` - Token authentication status API
+
+### Key Implementation Details
+
+#### Token Types
+- **Access Tokens**: Short-lived (24 hours) for temporary access
+- **Refresh Tokens**: Medium-lived (30 days) for generating new access tokens
+- **API Keys**: Long-lived (1 year) for permanent integrations
+
+#### Advanced Security Features
+- **Secure Token Generation**: Cryptographically secure using SHA256
+- **IP Whitelisting**: Restrict token usage to specific IP addresses
+- **Usage Limits**: Set maximum number of uses per token
+- **Scoped Permissions**: Fine-grained access control (read, write, admin, delete)
+- **Usage Tracking**: Comprehensive logging of all token usage
+- **Automatic Expiry**: Time-based token invalidation
+
+#### Token Management
+- **Web Interface**: User-friendly token management dashboard
+- **REST API**: Programmatic token management via API
+- **Usage Analytics**: Detailed statistics and usage patterns
+- **Token Refresh**: Seamless token renewal for long-term integrations
+- **Bulk Operations**: Extend, revoke, or manage multiple tokens
+
+#### Developer Experience
+- **API Documentation**: Clear endpoint documentation with examples
+- **Test Interface**: Built-in API testing tools in web interface
+- **Error Handling**: Comprehensive error messages and status codes
+- **Masked Display**: Secure token display for UI safety
+
 ## 📁 Project Structure
 
 ```
@@ -182,7 +238,12 @@ authencation_example/
 │   └── migrations/
 ├── jwt_auth/                      # 🔄 JWT authentication (planned)
 ├── oauth_auth/                    # 🔄 OAuth authentication (planned)
-├── token_auth/                    # 🔄 Token authentication (planned)
+├── token_auth/                    # ✅ Token authentication app
+│   ├── views.py                   # Token auth views and API endpoints
+│   ├── models.py                  # APIToken and TokenUsageLog models
+│   ├── urls.py                    # Token URL routing
+│   ├── tests.py                   # Token auth tests
+│   └── migrations/
 ├── templates/
 │   ├── base.html                  # Base template
 │   ├── basic_auth/                # Basic auth templates
@@ -191,13 +252,21 @@ authencation_example/
 │   │   ├── register.html
 │   │   ├── dashboard.html
 │   │   └── profile.html
-│   └── cookie_auth/               # Cookie auth templates
+│   ├── cookie_auth/               # Cookie auth templates
+│   │   ├── home.html
+│   │   ├── login.html
+│   │   ├── register.html
+│   │   ├── dashboard.html
+│   │   ├── profile.html
+│   │   └── settings.html
+│   └── token_auth/                # Token auth templates
 │       ├── home.html
 │       ├── login.html
 │       ├── register.html
 │       ├── dashboard.html
 │       ├── profile.html
-│       └── settings.html
+│       ├── management.html
+│       └── token_detail.html
 ├── static/                        # Static files
 ├── requirements.txt               # Dependencies
 └── manage.py
@@ -229,6 +298,20 @@ authencation_example/
 - [ ] Real-time cookie monitoring works correctly
 - [ ] User preferences are saved and retrieved from cookies
 
+### Manual Testing Checklist for Token Auth
+- [ ] User can register and receive initial API key
+- [ ] Login with "Create token" option generates new token
+- [ ] Dashboard displays token statistics correctly
+- [ ] Token management page allows creating different token types
+- [ ] Token detail page shows usage logs and statistics
+- [ ] API endpoints work with proper Authorization header
+- [ ] Token scopes are enforced correctly
+- [ ] Token expiry and usage limits work as expected
+- [ ] IP whitelisting restricts access properly
+- [ ] Token refresh mechanism works for refresh tokens
+- [ ] Token revocation immediately invalidates access
+- [ ] Usage logging captures all API calls accurately
+
 ### Running Tests
 ```bash
 # Test basic authentication
@@ -237,8 +320,11 @@ python manage.py test basic_auth
 # Test cookie authentication
 python manage.py test cookie_auth
 
+# Test token authentication
+python manage.py test token_auth
+
 # Test all authentication methods
-python manage.py test basic_auth cookie_auth
+python manage.py test basic_auth cookie_auth token_auth
 ```
 
 ## 🔧 Configuration
@@ -254,9 +340,143 @@ Key configurations for authentication:
 
 - ✅ **Basic Authentication**: Complete with full functionality
 - ✅ **Cookie Authentication**: Complete with advanced cookie management
+- ✅ **Token Authentication**: Complete with enterprise-grade features
 - 🔄 **JWT Authentication**: In development
 - 🔄 **OAuth Authentication**: Planned
-- 🔄 **Token Authentication**: Planned
+
+## 🎯 Usage Examples
+
+### Token Authentication API Usage
+
+#### Creating a Token via API
+```bash
+curl -X POST http://localhost:8000/token/api/token/create/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "your_username",
+    "password": "your_password",
+    "token_name": "My API Token",
+    "token_type": "api_key",
+    "scopes": ["read", "write"]
+  }'
+```
+
+#### Using Token for API Calls
+```bash
+# Get user profile
+curl -H "Authorization: Token YOUR_TOKEN_HERE" \
+     http://localhost:8000/token/api/user/
+
+# Get token information
+curl -H "Authorization: Token YOUR_TOKEN_HERE" \
+     http://localhost:8000/token/api/token/info/
+```
+
+#### Token Management
+```bash
+# Refresh token (requires refresh token)
+curl -X POST http://localhost:8000/token/api/token/refresh/ \
+  -H "Authorization: Token YOUR_REFRESH_TOKEN"
+
+# Revoke token
+curl -X POST http://localhost:8000/token/api/token/revoke/ \
+  -H "Authorization: Token YOUR_TOKEN_HERE"
+```
+
+### Token Authentication Web Flow
+
+1. **Registration**
+   - Visit `/token/register/`
+   - Automatic API key generation upon registration
+   - Immediate access to token management dashboard
+
+2. **Login with Token Creation**
+   - Visit `/token/login/`
+   - Check "Create API token on login" for immediate token
+   - Redirect to dashboard with new token information
+
+3. **Token Management**
+   - Dashboard: `/token/dashboard/` - Overview and statistics
+   - Management: `/token/management/` - Create and manage tokens
+   - Detail View: `/token/token/<id>/` - Detailed token information and logs
+
+4. **API Integration**
+   - Copy token from web interface
+   - Use in Authorization header: `Authorization: Token YOUR_TOKEN`
+   - Monitor usage via web dashboard
+
+## 📚 API Documentation
+
+### Token Authentication Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `GET` | `/token/api/user/` | Get user profile | ✅ Token |
+| `GET` | `/token/api/token/info/` | Get current token info | ✅ Token |
+| `POST` | `/token/api/token/create/` | Create new token | ❌ Username/Password |
+| `POST` | `/token/api/token/refresh/` | Refresh access token | ✅ Refresh Token |
+| `POST` | `/token/api/token/revoke/` | Revoke current token | ✅ Token |
+| `GET` | `/token/api/status/` | Check auth status | ❌ None |
+
+### Authentication Header Format
+```
+Authorization: Token YOUR_TOKEN_HERE
+```
+
+### Response Formats
+
+#### Success Response (User Profile)
+```json
+{
+  "user_id": 1,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "date_joined": "2024-01-01T00:00:00Z",
+  "token_info": {
+    "name": "My API Token",
+    "type": "api_key",
+    "scopes": ["read", "write"],
+    "expires_at": "2025-01-01T00:00:00Z",
+    "usage_count": 42
+  }
+}
+```
+
+#### Error Response
+```json
+{
+  "error": "Invalid credentials",
+  "detail": "Token authentication failed"
+}
+```
+
+## 🔒 Security Best Practices
+
+### Token Security
+- **Never expose tokens in client-side code** or version control
+- **Use HTTPS in production** to protect tokens in transit
+- **Implement token rotation** for long-lived integrations
+- **Monitor token usage** for suspicious activity
+- **Use appropriate scopes** - grant minimal necessary permissions
+- **Set reasonable expiry times** based on use case
+
+### IP Whitelisting
+- Configure IP restrictions for sensitive tokens
+- Use for server-to-server integrations
+- Regularly review and update IP whitelist
+
+### Usage Monitoring
+- Review token usage logs regularly
+- Set up alerts for unusual usage patterns
+- Monitor failed authentication attempts
+- Track token usage across different endpoints
+
+### Token Types Best Practices
+- **Access Tokens**: Use for short-term, user-facing applications
+- **Refresh Tokens**: Use for mobile apps and SPAs that need long-term access
+- **API Keys**: Use for server-to-server integrations and permanent access
 
 ## 🤝 Contributing
 
@@ -266,6 +486,28 @@ Key configurations for authentication:
 4. Push to branch (`git push origin feature/new-auth-method`)
 5. Create Pull Request
 
+### Development Guidelines
+- Follow Django best practices
+- Add comprehensive tests for new features
+- Update documentation for any new endpoints
+- Ensure security considerations are addressed
+- Add proper error handling and validation
+
+## 🏆 Features Comparison
+
+| Feature | Basic Auth | Cookie Auth | Token Auth | JWT Auth | OAuth |
+|---------|------------|-------------|------------|----------|-------|
+| **Session Management** | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **Stateless** | ❌ | ❌ | ✅ | ✅ | ❌ |
+| **API Friendly** | ❌ | ❌ | ✅ | ✅ | ✅ |
+| **Mobile Apps** | ❌ | ⚠️ | ✅ | ✅ | ✅ |
+| **Third-party Integration** | ❌ | ❌ | ✅ | ✅ | ✅ |
+| **Scalability** | ⚠️ | ⚠️ | ✅ | ✅ | ⚠️ |
+| **Security Features** | ⚠️ | ✅ | ✅ | ✅ | ✅ |
+| **Ease of Implementation** | ✅ | ✅ | ⚠️ | ⚠️ | ❌ |
+
+**Legend**: ✅ Excellent | ⚠️ Good | ❌ Not Suitable
+
 ## 📝 License
 
 This project is for educational purposes and demonstration of Django authentication methods.
@@ -273,3 +515,12 @@ This project is for educational purposes and demonstration of Django authenticat
 ## 📞 Support
 
 For questions or issues, please create an issue in the repository.
+
+---
+
+**🎯 Project Status**: 3/5 authentication methods completed
+- ✅ Basic Authentication (Session-based)
+- ✅ Cookie Authentication (Advanced cookie management)
+- ✅ Token Authentication (Enterprise-grade API tokens)
+- 🔄 JWT Authentication (In development)
+- 🔄 OAuth Authentication (Planned)

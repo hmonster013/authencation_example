@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Token Authentication - Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>👤 User Profile</h1>
+        <p class="text-muted">Token usage statistics and account information</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>👤 Account Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Username:</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ user.email|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>First Name:</strong></td>
+                        <td>{{ user.first_name|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Name:</strong></td>
+                        <td>{{ user.last_name|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Joined:</strong></td>
+                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Login:</strong></td>
+                        <td>{{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📊 Token Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ user_tokens.count }}</h4>
+                        <small>Total Tokens</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ total_usage }}</h4>
+                        <small>API Calls</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-info">{{ user_tokens|length }}</h5>
+                        <small>Active Tokens</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-warning">0</h5>
+                        <small>Expired Tokens</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔑 Your API Tokens</h5>
+            </div>
+            <div class="card-body">
+                {% if user_tokens %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Usage</th>
+                                    <th>Last Used</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for token in user_tokens %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ token.name }}</strong>
+                                        <br><small class="text-muted">{{ token.get_masked_token }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if token.token_type == 'access' %}primary{% elif token.token_type == 'refresh' %}success{% else %}info{% endif %}">
+                                            {{ token.get_token_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if token.is_valid %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif token.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ token.usage_count }}</span>
+                                        {% if token.max_usage %}
+                                            / {{ token.max_usage }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        {{ token.last_used|date:"M d, H:i"|default:"Never" }}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'token_auth:token_detail' token.id %}" class="btn btn-outline-info btn-sm">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No tokens found</h5>
+                        <p class="text-muted">You haven't created any API tokens yet.</p>
+                        <a href="{% url 'token_auth:token_management' %}" class="btn btn-primary">Create Your First Token</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📈 Recent API Usage</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_usage %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Token</th>
+                                    <th>Endpoint</th>
+                                    <th>Method</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usage in recent_usage %}
+                                <tr>
+                                    <td class="small">{{ usage.timestamp|date:"M d, H:i:s" }}</td>
+                                    <td class="small">{{ usage.token.name|truncatechars:20 }}</td>
+                                    <td class="small"><code>{{ usage.endpoint }}</code></td>
+                                    <td>
+                                        <span class="badge bg-{% if usage.method == 'GET' %}info{% elif usage.method == 'POST' %}success{% elif usage.method == 'PUT' %}warning{% elif usage.method == 'DELETE' %}danger{% else %}secondary{% endif %} badge-sm">
+                                            {{ usage.method }}
+                                        </span>
+                                    </td>
+                                    <td class="small">{{ usage.ip_address }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted">No recent API usage found.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>🚀 Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'token_auth:token_management' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-plus"></i> Create Token
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'token_auth:dashboard' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'token_auth:home' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'token_auth:logout' %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

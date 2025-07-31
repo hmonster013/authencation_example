@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Token Authentication - Token Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>🔧 Token Management</h1>
+        <p class="text-muted">Create, manage, and configure your API tokens</p>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>➕ Create New Token</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_token">
+                    
+                    <div class="mb-3">
+                        <label for="token_name" class="form-label">Token Name:</label>
+                        <input type="text" class="form-control" id="token_name" name="token_name" 
+                               placeholder="My API Token" required>
+                        <div class="form-text">Give your token a descriptive name</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="token_type" class="form-label">Token Type:</label>
+                        <select class="form-select" id="token_type" name="token_type">
+                            <option value="access">Access Token (24 hours)</option>
+                            <option value="refresh">Refresh Token (30 days)</option>
+                            <option value="api_key" selected>API Key (1 year)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Scopes:</label>
+                        {% for scope in available_scopes %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="scopes" 
+                                       value="{{ scope }}" id="scope_{{ scope }}"
+                                       {% if scope == 'read' or scope == 'write' %}checked{% endif %}>
+                                <label class="form-check-label" for="scope_{{ scope }}">
+                                    {{ scope|title }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Create Token</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔑 Your Tokens</h5>
+            </div>
+            <div class="card-body">
+                {% if user_tokens %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Expires</th>
+                                    <th>Usage</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for token in user_tokens %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ token.name }}</strong>
+                                        <br><small class="text-muted">{{ token.get_masked_token }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if token.token_type == 'access' %}primary{% elif token.token_type == 'refresh' %}success{% else %}info{% endif %}">
+                                            {{ token.get_token_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if token.is_valid %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif token.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ token.expires_at|date:"M d, Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ token.usage_count }}</span>
+                                        {% if token.max_usage %}
+                                            / {{ token.max_usage }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'token_auth:token_detail' token.id %}" 
+                                               class="btn btn-outline-info btn-sm">View</a>
+                                            
+                                            {% if token.is_active %}
+                                                <button type="button" class="btn btn-outline-warning btn-sm" 
+                                                        onclick="extendToken({{ token.id }}, '{{ token.name }}')">
+                                                    Extend
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="revokeToken({{ token.id }}, '{{ token.name }}')">
+                                                    Revoke
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No tokens found</h5>
+                        <p class="text-muted">Create your first API token using the form on the left.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>📚 Token Usage Guide</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🔑 Token Types</h6>
+                        <ul class="small">
+                            <li><strong>Access Token:</strong> Short-lived (24 hours), for temporary access</li>
+                            <li><strong>Refresh Token:</strong> Medium-lived (30 days), can generate new access tokens</li>
+                            <li><strong>API Key:</strong> Long-lived (1 year), for permanent integrations</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">🛡️ Scopes</h6>
+                        <ul class="small">
+                            <li><strong>Read:</strong> View user data and token information</li>
+                            <li><strong>Write:</strong> Create and modify data</li>
+                            <li><strong>Admin:</strong> Administrative operations</li>
+                            <li><strong>Delete:</strong> Delete data and tokens</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>🚀 API Usage Example</h6>
+                        <pre class="bg-light p-2 small"><code># Get user profile
+curl -H "Authorization: Token YOUR_TOKEN" \
+     http://localhost:8000/token/api/user/
+
+# Get token information  
+curl -H "Authorization: Token YOUR_TOKEN" \
+     http://localhost:8000/token/api/token/info/</code></pre>
+                        
+                        <h6 class="mt-3">🔒 Security Tips</h6>
+                        <ul class="small">
+                            <li>Store tokens securely and never expose them in code</li>
+                            <li>Use appropriate scopes for your use case</li>
+                            <li>Regularly rotate long-lived tokens</li>
+                            <li>Monitor token usage for suspicious activity</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden forms for token actions -->
+<form id="revokeForm" method="post" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="revoke_token">
+    <input type="hidden" name="token_id" id="revokeTokenId">
+</form>
+
+<form id="extendForm" method="post" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="extend_token">
+    <input type="hidden" name="token_id" id="extendTokenId">
+    <input type="hidden" name="days" id="extendDays" value="30">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function revokeToken(tokenId, tokenName) {
+    if (confirm(`Are you sure you want to revoke the token "${tokenName}"? This action cannot be undone.`)) {
+        document.getElementById('revokeTokenId').value = tokenId;
+        document.getElementById('revokeForm').submit();
+    }
+}
+
+function extendToken(tokenId, tokenName) {
+    const days = prompt(`How many days would you like to extend the token "${tokenName}"?`, '30');
+    if (days && !isNaN(days) && parseInt(days) > 0) {
+        document.getElementById('extendTokenId').value = tokenId;
+        document.getElementById('extendDays').value = parseInt(days);
+        document.getElementById('extendForm').submit();
+    }
+}
+</script>
+{% endblock %}

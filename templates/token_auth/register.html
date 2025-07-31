@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Token Authentication - Register{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="text-center">🎟️ Token Authentication Register</h4>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Username:</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.username.help_text %}
+                            <div class="form-text">{{ form.username.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label">Password:</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <div class="text-danger small">{{ form.password1.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.password1.help_text %}
+                            <div class="form-text">{{ form.password1.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password:</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger small">{{ form.password2.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.password2.help_text %}
+                            <div class="form-text">{{ form.password2.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <p>Already have an account? <a href="{% url 'token_auth:login' %}">Login here</a></p>
+                    <p><a href="{% url 'token_auth:home' %}">← Back to Token Auth Home</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🎁 Registration Benefits</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">When you register, you'll automatically get:</p>
+                <ul class="small">
+                    <li><strong>Initial API Key</strong> - Ready to use immediately</li>
+                    <li><strong>Token Dashboard</strong> - Manage all your tokens</li>
+                    <li><strong>Usage Analytics</strong> - Track API usage patterns</li>
+                    <li><strong>Security Features</strong> - IP whitelisting, usage limits</li>
+                    <li><strong>Multiple Token Types</strong> - Access, refresh, and API keys</li>
+                </ul>
+                
+                <div class="alert alert-info alert-sm mt-3">
+                    <strong>🔒 Security Note:</strong> Your initial API key will be displayed once after registration. 
+                    Make sure to copy and store it securely!
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add form classes for Bootstrap styling
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+    inputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+});
+</script>
+{% endblock %}

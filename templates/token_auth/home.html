@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block title %}Token Authentication - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mb-4">🎟️ Token-Based Authentication</h1>
+        <p class="text-center text-muted">API tokens for secure programmatic access</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="auth-method">
+            <h3>🎟️ Token Authentication Features</h3>
+            <p>This implementation demonstrates comprehensive token-based authentication for API access with advanced token management capabilities.</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🔑 Token Types</h5>
+                    <ul>
+                        <li><strong>Access Tokens</strong> - Short-lived (24 hours)</li>
+                        <li><strong>Refresh Tokens</strong> - Long-lived (30 days)</li>
+                        <li><strong>API Keys</strong> - Long-term (1 year)</li>
+                        <li><strong>Custom Expiry</strong> - Configurable lifetimes</li>
+                        <li><strong>Scoped Access</strong> - Permission-based tokens</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>🛡️ Security Features</h5>
+                    <ul>
+                        <li><strong>Secure Generation</strong> - Cryptographically secure</li>
+                        <li><strong>Usage Tracking</strong> - Monitor token usage</li>
+                        <li><strong>IP Whitelisting</strong> - Restrict by IP address</li>
+                        <li><strong>Usage Limits</strong> - Maximum usage counts</li>
+                        <li><strong>Automatic Expiry</strong> - Time-based invalidation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                {% if user.is_authenticated %}
+                    <div class="alert alert-success">
+                        <strong>✅ You are logged in!</strong><br>
+                        Welcome back, {{ user.username }}! You have {{ token_count }} active token{{ token_count|pluralize }}.
+                    </div>
+                    
+                    {% if user_tokens %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6>🔑 Your Recent Tokens</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Expires</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for token in user_tokens %}
+                                        <tr>
+                                            <td>{{ token.name }}</td>
+                                            <td>
+                                                <span class="badge bg-{% if token.token_type == 'access' %}primary{% elif token.token_type == 'refresh' %}success{% else %}info{% endif %}">
+                                                    {{ token.get_token_type_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if token.is_valid %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Invalid</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="small">{{ token.expires_at|date:"M d, Y H:i" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'token_auth:dashboard' %}" class="btn btn-primary me-2">Token Dashboard</a>
+                        <a href="{% url 'token_auth:token_management' %}" class="btn btn-outline-primary me-2">Manage Tokens</a>
+                        <a href="{% url 'token_auth:profile' %}" class="btn btn-outline-secondary me-2">Profile</a>
+                        <a href="{% url 'token_auth:logout' %}" class="btn btn-outline-danger">Logout</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Not authenticated</strong><br>
+                        Please log in to create and manage API tokens.
+                    </div>
+                    <a href="{% url 'token_auth:login' %}" class="btn btn-primary me-2">Login</a>
+                    <a href="{% url 'token_auth:register' %}" class="btn btn-outline-primary">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>📊 API Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="api-status">
+                    <p>Loading API status...</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" onclick="checkAPIStatus()">Refresh Status</button>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📚 API Documentation</h5>
+            </div>
+            <div class="card-body">
+                <h6>Available Endpoints:</h6>
+                <ul class="small">
+                    <li><code>GET /token/api/user/</code> - User profile</li>
+                    <li><code>GET /token/api/token/info/</code> - Token info</li>
+                    <li><code>POST /token/api/token/create/</code> - Create token</li>
+                    <li><code>POST /token/api/token/refresh/</code> - Refresh token</li>
+                    <li><code>POST /token/api/token/revoke/</code> - Revoke token</li>
+                </ul>
+                
+                <h6 class="mt-3">Authentication Header:</h6>
+                <code class="small">Authorization: Token YOUR_TOKEN_HERE</code>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🧪 Test API</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="api-token" class="form-label">API Token:</label>
+                    <input type="text" class="form-control form-control-sm" id="api-token" placeholder="Enter your token">
+                </div>
+                <button class="btn btn-outline-success btn-sm" onclick="testAPI()">Test API Call</button>
+                <div id="api-result" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>🔗 Other Authentication Methods</h4>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔐 Basic Auth</h6>
+                        <a href="/basic/" class="btn btn-outline-primary btn-sm">Try Basic</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🍪 Cookie Auth</h6>
+                        <a href="/cookie/" class="btn btn-outline-secondary btn-sm">Try Cookie</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎫 JWT Auth</h6>
+                        <a href="/jwt/" class="btn btn-outline-success btn-sm">Try JWT</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔑 OAuth</h6>
+                        <a href="/oauth/" class="btn btn-outline-info btn-sm">Try OAuth</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkAPIStatus() {
+    fetch('/token/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('api-status');
+            let statusHtml = '';
+            
+            if (data.session_authenticated) {
+                statusHtml += `
+                    <div class="alert alert-success alert-sm">
+                        <strong>✅ Session Active</strong><br>
+                        User: ${data.username} (ID: ${data.user_id})
+                    </div>
+                `;
+            } else {
+                statusHtml += `
+                    <div class="alert alert-warning alert-sm">
+                        <strong>❌ No Session</strong>
+                    </div>
+                `;
+            }
+            
+            statusHtml += `
+                <div class="small">
+                    <strong>API Status:</strong><br>
+                    • Token Header: ${data.has_token_header ? '✅' : '❌'}<br>
+                    • Token Valid: ${data.token_info ? (data.token_info.is_valid ? '✅' : '❌') : '❌'}
+                </div>
+            `;
+            
+            if (data.token_info) {
+                statusHtml += `
+                    <div class="small mt-2">
+                        <strong>Token Info:</strong><br>
+                        • Name: ${data.token_info.name}<br>
+                        • Type: ${data.token_info.type}<br>
+                        • Usage: ${data.token_info.usage_count}
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('api-status').innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <strong>Error checking status</strong>
+                </div>
+            `;
+        });
+}
+
+function testAPI() {
+    const token = document.getElementById('api-token').value;
+    const resultDiv = document.getElementById('api-result');
+    
+    if (!token) {
+        resultDiv.innerHTML = '<div class="alert alert-warning alert-sm">Please enter a token</div>';
+        return;
+    }
+    
+    fetch('/token/api/user/', {
+        headers: {
+            'Authorization': `Token ${token}`
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.user_id) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success alert-sm">
+                    <strong>✅ API Success</strong><br>
+                    User: ${data.username}<br>
+                    Token: ${data.token_info.name}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <strong>❌ API Error</strong><br>
+                    ${data.error || 'Invalid token'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger alert-sm">
+                <strong>❌ Request Failed</strong><br>
+                Check token and try again
+            </div>
+        `;
+    });
+}
+
+// Check status on page load
+document.addEventListener('DOMContentLoaded', checkAPIStatus);
+
+// Auto-refresh every 30 seconds
+setInterval(checkAPIStatus, 30000);
+</script>
+{% endblock %}
