@@ -28,8 +28,15 @@ A comprehensive Django project demonstrating different authentication methods in
 - **Token refresh mechanism** for long-term integrations
 - **Developer-friendly API** with clear documentation
 
+### ✅ JWT Authentication (Completed)
+- **Stateless authentication** with JSON Web Tokens
+- **Advanced session management** with device tracking and security monitoring
+- **Token blacklisting** for secure logout and revocation
+- **Rate limiting** and brute force protection
+- **Multi-device support** with comprehensive session analytics
+- **Enterprise security features** with IP tracking and login attempt monitoring
+
 ### 🔄 Planned Authentication Methods
-- **JWT Authentication** - JSON Web Token based stateless authentication
 - **OAuth Authentication** - Third-party login (Google, GitHub)
 
 ## 📋 Requirements
@@ -81,6 +88,7 @@ python manage.py runserver
 - Basic Auth: http://127.0.0.1:8000/basic/
 - Cookie Auth: http://127.0.0.1:8000/cookie/
 - Token Auth: http://127.0.0.1:8000/token/
+- JWT Auth: http://127.0.0.1:8000/jwt/
 - Admin panel: http://127.0.0.1:8000/admin/
 
 ## 🔐 Basic Authentication Features
@@ -173,6 +181,55 @@ python manage.py runserver
 - ✅ Custom authentication token generation
 - ✅ Configurable session expiry based on user preference
 
+## 🎫 JWT Authentication Features
+
+### Available Endpoints
+- `/jwt/` - Home page with JWT authentication overview
+- `/jwt/login/` - User login with JWT session creation
+- `/jwt/register/` - User registration with automatic JWT session
+- `/jwt/logout/` - User logout with token blacklisting
+- `/jwt/dashboard/` - Protected dashboard with session statistics
+- `/jwt/profile/` - User profile with login analytics
+- `/jwt/sessions/` - Comprehensive session management interface
+- `/jwt/session/<uuid>/` - Detailed session view with activity logs
+- `/jwt/api/login/` - API endpoint for JWT authentication
+- `/jwt/api/logout/` - API endpoint for JWT logout with blacklisting
+- `/jwt/api/user/` - API endpoint for user profile (requires JWT)
+- `/jwt/api/sessions/` - API endpoint for session management
+- `/jwt/api/token/` - DRF SimpleJWT token obtain endpoint
+- `/jwt/api/token/refresh/` - DRF SimpleJWT token refresh endpoint
+- `/jwt/api/status/` - JWT authentication status API
+
+### Key Implementation Details
+
+#### JWT Token Management
+- **Access Tokens**: Short-lived (60 minutes) for API authentication
+- **Refresh Tokens**: Medium-lived (7 days) with automatic rotation
+- **Token Blacklisting**: Secure revocation of compromised tokens
+- **Custom Claims**: Extended token information (session_id, IP address)
+
+#### Advanced Security Features
+- **Rate Limiting**: Prevent brute force attacks (5 attempts per 15 minutes)
+- **Login Monitoring**: Comprehensive logging of all authentication attempts
+- **Device Tracking**: Browser, OS, and device type identification
+- **IP Monitoring**: Track login locations and detect suspicious activity
+- **Session Management**: Multi-device session tracking and termination
+- **Automatic Cleanup**: Scheduled removal of expired tokens and sessions
+
+#### Session Analytics
+- **Device Information**: Detailed browser and OS detection
+- **Login History**: Complete audit trail of authentication attempts
+- **Session Timeline**: Visual representation of session lifecycle
+- **Security Monitoring**: Real-time alerts for suspicious activities
+- **Multi-device Support**: Manage sessions across different devices
+
+#### Developer Experience
+- **RESTful API**: Clean and intuitive API endpoints
+- **Comprehensive Documentation**: Clear examples and usage guides
+- **Error Handling**: Detailed error messages and status codes
+- **Test Interface**: Built-in API testing tools in web interface
+- **Management Commands**: CLI tools for token cleanup and maintenance
+
 ## 🎟️ Token Authentication Features
 
 ### Available Endpoints
@@ -236,7 +293,16 @@ authencation_example/
 │   ├── urls.py                    # Cookie URL routing
 │   ├── tests.py                   # Cookie auth tests
 │   └── migrations/
-├── jwt_auth/                      # 🔄 JWT authentication (planned)
+├── jwt_auth/                      # ✅ JWT authentication app
+│   ├── views.py                   # JWT auth views and API endpoints
+│   ├── models.py                  # JWTBlacklist, JWTUserSession, JWTLoginAttempt models
+│   ├── urls.py                    # JWT URL routing
+│   ├── admin.py                   # Django admin configuration
+│   ├── tests.py                   # JWT auth tests
+│   ├── management/                # Management commands
+│   │   └── commands/
+│   │       └── cleanup_jwt_tokens.py  # Token cleanup command
+│   └── migrations/
 ├── oauth_auth/                    # 🔄 OAuth authentication (planned)
 ├── token_auth/                    # ✅ Token authentication app
 │   ├── views.py                   # Token auth views and API endpoints
@@ -259,14 +325,22 @@ authencation_example/
 │   │   ├── dashboard.html
 │   │   ├── profile.html
 │   │   └── settings.html
-│   └── token_auth/                # Token auth templates
+│   ├── token_auth/                # Token auth templates
+│   │   ├── home.html
+│   │   ├── login.html
+│   │   ├── register.html
+│   │   ├── dashboard.html
+│   │   ├── profile.html
+│   │   ├── management.html
+│   │   └── token_detail.html
+│   └── jwt_auth/                  # JWT auth templates
 │       ├── home.html
 │       ├── login.html
 │       ├── register.html
 │       ├── dashboard.html
 │       ├── profile.html
-│       ├── management.html
-│       └── token_detail.html
+│       ├── session_management.html
+│       └── session_detail.html
 ├── static/                        # Static files
 ├── requirements.txt               # Dependencies
 └── manage.py
@@ -298,6 +372,20 @@ authencation_example/
 - [ ] Real-time cookie monitoring works correctly
 - [ ] User preferences are saved and retrieved from cookies
 
+### Manual Testing Checklist for JWT Auth
+- [ ] User can register and receive JWT session automatically
+- [ ] Login with "Create session" option generates JWT tokens
+- [ ] Dashboard displays session statistics and device information
+- [ ] Session management page shows all active sessions
+- [ ] Session detail page shows comprehensive activity logs
+- [ ] API endpoints work with proper Bearer token authentication
+- [ ] Token blacklisting immediately invalidates access
+- [ ] Rate limiting prevents brute force attacks (5 attempts/15min)
+- [ ] Device tracking captures browser and OS information
+- [ ] Multi-device sessions can be managed independently
+- [ ] Session termination works for individual and all sessions
+- [ ] Login attempt monitoring logs all authentication events
+
 ### Manual Testing Checklist for Token Auth
 - [ ] User can register and receive initial API key
 - [ ] Login with "Create token" option generates new token
@@ -323,8 +411,11 @@ python manage.py test cookie_auth
 # Test token authentication
 python manage.py test token_auth
 
+# Test JWT authentication
+python manage.py test jwt_auth
+
 # Test all authentication methods
-python manage.py test basic_auth cookie_auth token_auth
+python manage.py test basic_auth cookie_auth token_auth jwt_auth
 ```
 
 ## 🔧 Configuration
@@ -341,7 +432,7 @@ Key configurations for authentication:
 - ✅ **Basic Authentication**: Complete with full functionality
 - ✅ **Cookie Authentication**: Complete with advanced cookie management
 - ✅ **Token Authentication**: Complete with enterprise-grade features
-- 🔄 **JWT Authentication**: In development
+- ✅ **JWT Authentication**: Complete with advanced session management
 - 🔄 **OAuth Authentication**: Planned
 
 ## 🎯 Usage Examples
@@ -405,6 +496,80 @@ curl -X POST http://localhost:8000/token/api/token/revoke/ \
    - Use in Authorization header: `Authorization: Token YOUR_TOKEN`
    - Monitor usage via web dashboard
 
+### JWT Authentication API Usage
+
+#### Login to Get JWT Tokens
+```bash
+curl -X POST http://localhost:8000/jwt/api/login/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "your_username",
+    "password": "your_password"
+  }'
+```
+
+#### Using JWT Token for API Calls
+```bash
+# Get user profile
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+     http://localhost:8000/jwt/api/user/
+
+# Get user sessions
+curl -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+     http://localhost:8000/jwt/api/sessions/
+```
+
+#### Token Refresh
+```bash
+# Refresh access token using refresh token
+curl -X POST http://localhost:8000/jwt/api/token/refresh/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh": "YOUR_REFRESH_TOKEN"
+  }'
+```
+
+#### Session Management
+```bash
+# Terminate specific session
+curl -X POST http://localhost:8000/jwt/api/sessions/terminate/ \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "SESSION_UUID"
+  }'
+
+# Terminate all sessions
+curl -X POST http://localhost:8000/jwt/api/sessions/terminate-all/ \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Logout (blacklist current token)
+curl -X POST http://localhost:8000/jwt/api/logout/ \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### JWT Authentication Web Flow
+
+1. **Registration**
+   - Visit `/jwt/register/`
+   - Automatic JWT session creation upon registration
+   - Immediate access to session management dashboard
+
+2. **Login with JWT Session**
+   - Visit `/jwt/login/`
+   - Check "Create JWT session on login" for token generation
+   - Redirect to dashboard with session information
+
+3. **Session Management**
+   - Dashboard: `/jwt/dashboard/` - Overview and session statistics
+   - Sessions: `/jwt/sessions/` - Manage all active sessions
+   - Detail View: `/jwt/session/<uuid>/` - Detailed session information
+
+4. **API Integration**
+   - Use access token in Authorization header: `Authorization: Bearer YOUR_TOKEN`
+   - Refresh tokens automatically when access token expires
+   - Monitor sessions and device activity via web dashboard
+
 ## 📚 API Documentation
 
 ### Token Authentication Endpoints
@@ -418,14 +583,70 @@ curl -X POST http://localhost:8000/token/api/token/revoke/ \
 | `POST` | `/token/api/token/revoke/` | Revoke current token | ✅ Token |
 | `GET` | `/token/api/status/` | Check auth status | ❌ None |
 
-### Authentication Header Format
+### Token Authentication Header Format
 ```
 Authorization: Token YOUR_TOKEN_HERE
 ```
 
+### JWT Authentication Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/jwt/api/login/` | JWT login | ❌ Username/Password |
+| `POST` | `/jwt/api/logout/` | JWT logout with blacklisting | ✅ JWT Token |
+| `GET` | `/jwt/api/user/` | Get user profile | ✅ JWT Token |
+| `GET` | `/jwt/api/sessions/` | Get user sessions | ✅ JWT Token |
+| `POST` | `/jwt/api/sessions/terminate/` | Terminate specific session | ✅ JWT Token |
+| `POST` | `/jwt/api/sessions/terminate-all/` | Terminate all sessions | ✅ JWT Token |
+| `POST` | `/jwt/api/token/` | Obtain JWT tokens | ❌ Username/Password |
+| `POST` | `/jwt/api/token/refresh/` | Refresh access token | ❌ Refresh Token |
+| `GET` | `/jwt/api/status/` | Check JWT auth status | ❌ None |
+
+### JWT Authentication Header Format
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
 ### Response Formats
 
-#### Success Response (User Profile)
+#### JWT Login Response
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "message": "Login successful"
+}
+```
+
+#### JWT User Profile Response
+```json
+{
+  "user_id": 1,
+  "username": "john_doe",
+  "email": "john@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "date_joined": "2024-01-01T00:00:00Z",
+  "session_info": {
+    "session_id": "550e8400-e29b-41d4-a716-446655440000",
+    "created_at": "2024-01-01T10:00:00Z",
+    "last_activity": "2024-01-01T10:30:00Z",
+    "expires_at": "2024-01-08T10:00:00Z",
+    "ip_address": "192.168.1.100",
+    "device_info": {
+      "browser": "Chrome 120.0.0.0",
+      "os": "Windows 10",
+      "is_mobile": false
+    }
+  },
+  "active_sessions": 3
+}
+```
+
+#### Token Authentication User Profile Response
 ```json
 {
   "user_id": 1,
@@ -478,6 +699,34 @@ Authorization: Token YOUR_TOKEN_HERE
 - **Refresh Tokens**: Use for mobile apps and SPAs that need long-term access
 - **API Keys**: Use for server-to-server integrations and permanent access
 
+### JWT Security Best Practices
+- **Token Storage**: Store JWT tokens securely (httpOnly cookies for web, secure storage for mobile)
+- **Token Rotation**: Implement refresh token rotation for enhanced security
+- **Session Management**: Monitor and manage active sessions across devices
+- **Blacklisting**: Implement token blacklisting for immediate revocation
+- **Rate Limiting**: Protect against brute force attacks with login attempt limits
+- **Device Tracking**: Monitor login devices and locations for suspicious activity
+
+### JWT vs Token Authentication
+- **JWT**: Stateless, self-contained, ideal for microservices and mobile apps
+- **Token Auth**: Stateful, server-side validation, better for traditional web apps
+- **Use JWT when**: Building APIs, microservices, mobile apps, or need stateless auth
+- **Use Token Auth when**: Building traditional web apps or need fine-grained control
+
+## 🛠️ Management Commands
+
+### JWT Token Cleanup
+```bash
+# Clean up expired JWT tokens and sessions (dry run)
+python manage.py cleanup_jwt_tokens --dry-run
+
+# Clean up expired tokens and sessions
+python manage.py cleanup_jwt_tokens
+
+# Clean up tokens and login attempts older than 60 days
+python manage.py cleanup_jwt_tokens --days 60
+```
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -518,9 +767,9 @@ For questions or issues, please create an issue in the repository.
 
 ---
 
-**🎯 Project Status**: 3/5 authentication methods completed
+**🎯 Project Status**: 4/5 authentication methods completed
 - ✅ Basic Authentication (Session-based)
 - ✅ Cookie Authentication (Advanced cookie management)
 - ✅ Token Authentication (Enterprise-grade API tokens)
-- 🔄 JWT Authentication (In development)
+- ✅ JWT Authentication (Stateless with advanced session management)
 - 🔄 OAuth Authentication (Planned)

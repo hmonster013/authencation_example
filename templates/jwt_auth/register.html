@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block title %}JWT Authentication - Register{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="text-center">🎫 JWT Authentication Register</h4>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">Username:</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.username.help_text %}
+                            <div class="form-text">{{ form.username.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label">Password:</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <div class="text-danger small">{{ form.password1.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.password1.help_text %}
+                            <div class="form-text">{{ form.password1.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password:</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger small">{{ form.password2.errors.0 }}</div>
+                        {% endif %}
+                        {% if form.password2.help_text %}
+                            <div class="form-text">{{ form.password2.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <p>Already have an account? <a href="{% url 'jwt_auth:login' %}">Login here</a></p>
+                    <p><a href="{% url 'jwt_auth:home' %}">← Back to JWT Auth Home</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🎁 Registration Benefits</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">When you register, you'll automatically get:</p>
+                <ul class="small">
+                    <li><strong>JWT Session</strong> - Immediate access to JWT tokens</li>
+                    <li><strong>Session Dashboard</strong> - Manage all your JWT sessions</li>
+                    <li><strong>Security Monitoring</strong> - Track login attempts and devices</li>
+                    <li><strong>API Access</strong> - Full access to JWT-protected endpoints</li>
+                    <li><strong>Multi-device Support</strong> - Manage sessions across devices</li>
+                </ul>
+                
+                <div class="alert alert-info alert-sm mt-3">
+                    <strong>🔒 Security Note:</strong> Your JWT tokens will be created automatically after registration. 
+                    You can manage and revoke sessions from your dashboard at any time.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🎫 JWT Token Types</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🔑 Access Token</h6>
+                        <ul class="small">
+                            <li><strong>Lifetime:</strong> 60 minutes</li>
+                            <li><strong>Purpose:</strong> API authentication</li>
+                            <li><strong>Usage:</strong> Include in Authorization header</li>
+                            <li><strong>Security:</strong> Short-lived for safety</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>🔄 Refresh Token</h6>
+                        <ul class="small">
+                            <li><strong>Lifetime:</strong> 7 days</li>
+                            <li><strong>Purpose:</strong> Generate new access tokens</li>
+                            <li><strong>Usage:</strong> Token refresh endpoint</li>
+                            <li><strong>Security:</strong> Rotated on each use</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h6 class="mt-3">🔄 Token Refresh Flow:</h6>
+                <ol class="small">
+                    <li>Access token expires after 60 minutes</li>
+                    <li>Use refresh token to get new access token</li>
+                    <li>Refresh token is rotated (new one issued)</li>
+                    <li>Old refresh token is blacklisted</li>
+                    <li>Continue using new tokens</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>📱 Multi-Device Support</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">JWT authentication supports multiple concurrent sessions:</p>
+                <ul class="small">
+                    <li><strong>Device Tracking</strong> - See which devices are logged in</li>
+                    <li><strong>Session Management</strong> - Terminate specific sessions</li>
+                    <li><strong>Security Monitoring</strong> - Monitor suspicious activity</li>
+                    <li><strong>IP Tracking</strong> - See login locations</li>
+                    <li><strong>Browser Detection</strong> - Identify different browsers</li>
+                </ul>
+                
+                <div class="alert alert-warning alert-sm mt-3">
+                    <strong>⚠️ Security Tip:</strong> Regularly review your active sessions and terminate 
+                    any sessions from unrecognized devices or locations.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add form classes for Bootstrap styling
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+    inputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+});
+</script>
+{% endblock %}

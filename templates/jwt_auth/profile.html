@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block title %}JWT Authentication - Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>👤 User Profile</h1>
+        <p class="text-muted">JWT session statistics and account information</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>👤 Account Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Username:</strong></td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Email:</strong></td>
+                        <td>{{ user.email|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>First Name:</strong></td>
+                        <td>{{ user.first_name|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Name:</strong></td>
+                        <td>{{ user.last_name|default:"Not provided" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Joined:</strong></td>
+                        <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Login:</strong></td>
+                        <td>{{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📊 JWT Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ user_sessions.count }}</h4>
+                        <small>Total Sessions</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ total_logins }}</h4>
+                        <small>Successful Logins</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-info">{{ user_sessions|length }}</h5>
+                        <small>Active Sessions</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-warning">{{ failed_logins }}</h5>
+                        <small>Failed Attempts</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🔒 Security Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Recent Activity:</strong></p>
+                    <ul>
+                        <li>Sessions created: {{ user_sessions.count }}</li>
+                        <li>Login attempts: {{ recent_logins|length }}</li>
+                        <li>Failed logins: {{ failed_logins }}</li>
+                    </ul>
+                    
+                    {% if recent_logins %}
+                        <p><strong>Last Login:</strong><br>
+                        {{ recent_logins.0.timestamp|date:"M d, Y H:i:s" }}<br>
+                        IP: {{ recent_logins.0.ip_address }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔑 Your JWT Sessions</h5>
+            </div>
+            <div class="card-body">
+                {% if user_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Session ID</th>
+                                    <th>Device</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Last Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in user_sessions %}
+                                <tr>
+                                    <td class="small">
+                                        <code>{{ session.session_id|truncatechars:12 }}...</code>
+                                    </td>
+                                    <td class="small">
+                                        {% if session.device_info.browser %}
+                                            {{ session.device_info.browser|truncatechars:15 }}<br>
+                                            <span class="text-muted">{{ session.device_info.os|truncatechars:15 }}</span>
+                                        {% else %}
+                                            Unknown
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if session.is_active and not session.is_expired %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif session.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Terminated</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ session.created_at|date:"M d, H:i" }}</td>
+                                    <td class="small">{{ session.last_activity|date:"M d, H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'jwt_auth:session_detail' session.session_id %}" class="btn btn-outline-info btn-sm">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No sessions found</h5>
+                        <p class="text-muted">You haven't created any JWT sessions yet.</p>
+                        <a href="{% url 'jwt_auth:login' %}" class="btn btn-primary">Create Your First Session</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📈 Recent Login Attempts</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_logins %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>IP Address</th>
+                                    <th>Status</th>
+                                    <th>User Agent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for login in recent_logins %}
+                                <tr>
+                                    <td class="small">{{ login.timestamp|date:"M d, H:i:s" }}</td>
+                                    <td class="small">{{ login.ip_address }}</td>
+                                    <td>
+                                        {% if login.success %}
+                                            <span class="badge bg-success badge-sm">Success</span>
+                                        {% else %}
+                                            <span class="badge bg-danger badge-sm">Failed</span>
+                                            {% if login.failure_reason %}
+                                                <br><small class="text-muted">{{ login.get_failure_reason_display }}</small>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="small" title="{{ login.user_agent }}">
+                                        {{ login.user_agent|truncatechars:40 }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <p class="text-muted">No recent login attempts found.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>🚀 Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'jwt_auth:session_management' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-cogs"></i> Manage Sessions
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'jwt_auth:dashboard' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'jwt_auth:home' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'jwt_auth:logout' %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

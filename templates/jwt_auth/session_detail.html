@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}JWT Authentication - Session Detail{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>🔍 JWT Session Details</h1>
+        <p class="text-muted">Detailed information and activity logs for your JWT session</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card {% if is_current %}border-success{% endif %}">
+            <div class="card-header {% if is_current %}bg-success text-white{% endif %}">
+                <h5>🔑 Session Information</h5>
+                {% if is_current %}
+                    <span class="badge bg-light text-dark">Current Session</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>Session ID:</strong></td>
+                        <td><code class="small">{{ session.session_id }}</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            {% if session.is_active and not session.is_expired %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif session.is_expired %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Terminated</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td>{{ session.created_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Activity:</strong></td>
+                        <td>{{ session.last_activity|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Expires:</strong></td>
+                        <td>{{ session.expires_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    {% if session.logout_at %}
+                    <tr>
+                        <td><strong>Terminated:</strong></td>
+                        <td>{{ session.logout_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🌐 Location & Device</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <td><strong>IP Address:</strong></td>
+                        <td>{{ session.ip_address }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Browser:</strong></td>
+                        <td>{{ session.device_info.browser|default:"Unknown" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Operating System:</strong></td>
+                        <td>{{ session.device_info.os|default:"Unknown" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Device Type:</strong></td>
+                        <td>
+                            {% if session.device_info.is_mobile %}
+                                📱 Mobile Device
+                            {% elif session.device_info.is_tablet %}
+                                📱 Tablet
+                            {% elif session.device_info.is_pc %}
+                                💻 Desktop Computer
+                            {% else %}
+                                ❓ Unknown Device
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if session.device_info.device %}
+                    <tr>
+                        <td><strong>Device Model:</strong></td>
+                        <td>{{ session.device_info.device }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🚀 Session Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'jwt_auth:session_management' %}" class="btn btn-outline-primary">
+                        ← Back to Session Management
+                    </a>
+                    <a href="{% url 'jwt_auth:dashboard' %}" class="btn btn-outline-secondary">
+                        Dashboard
+                    </a>
+                    {% if session.is_active and not session.is_expired %}
+                        <button class="btn btn-outline-danger" onclick="terminateSession()">
+                            🚫 Terminate This Session
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if is_current %}
+        <div class="card mt-3 border-info">
+            <div class="card-header bg-info text-white">
+                <h5>🧪 Test JWT API</h5>
+            </div>
+            <div class="card-body">
+                <p class="small">Test API calls with your current session:</p>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-success btn-sm" onclick="testCurrentSession()">
+                        Test API Call
+                    </button>
+                </div>
+                <div id="api-test-result" class="mt-2"></div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>📊 Login Activity</h5>
+                <span class="badge bg-info">{{ login_attempts.count }} attempts</span>
+            </div>
+            <div class="card-body">
+                {% if login_attempts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Status</th>
+                                    <th>IP Address</th>
+                                    <th>User Agent</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in login_attempts %}
+                                <tr>
+                                    <td class="small">{{ attempt.timestamp|date:"M d, H:i:s" }}</td>
+                                    <td>
+                                        {% if attempt.success %}
+                                            <span class="badge bg-success badge-sm">Success</span>
+                                        {% else %}
+                                            <span class="badge bg-danger badge-sm">Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ attempt.ip_address }}</td>
+                                    <td class="small" title="{{ attempt.user_agent }}">
+                                        {{ attempt.user_agent|truncatechars:40 }}
+                                    </td>
+                                    <td class="small">
+                                        {% if not attempt.success and attempt.failure_reason %}
+                                            <span class="text-danger">{{ attempt.get_failure_reason_display }}</span>
+                                        {% elif attempt.success %}
+                                            <span class="text-success">Login successful</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No login activity</h5>
+                        <p class="text-muted">No login attempts found for this session timeframe.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📋 Session Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Session Created</h6>
+                            <p class="timeline-text small">
+                                {{ session.created_at|date:"M d, Y H:i:s" }}<br>
+                                IP: {{ session.ip_address }}<br>
+                                Device: {{ session.device_info.browser|default:"Unknown" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Last Activity</h6>
+                            <p class="timeline-text small">
+                                {{ session.last_activity|date:"M d, Y H:i:s" }}<br>
+                                Session updated with latest activity
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if session.logout_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-danger"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Session Terminated</h6>
+                            <p class="timeline-text small">
+                                {{ session.logout_at|date:"M d, Y H:i:s" }}<br>
+                                Session was manually terminated
+                            </p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Scheduled Expiry</h6>
+                            <p class="timeline-text small">
+                                {{ session.expires_at|date:"M d, Y H:i:s" }}<br>
+                                Session will expire automatically
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🔒 Security Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>📊 Session Stats</h6>
+                        <ul class="small">
+                            <li><strong>Duration:</strong> 
+                                {% if session.logout_at %}
+                                    {{ session.logout_at|timeuntil:session.created_at }}
+                                {% else %}
+                                    {{ session.created_at|timesince }} (ongoing)
+                                {% endif %}
+                            </li>
+                            <li><strong>Refresh Token:</strong> {{ session.refresh_jti|truncatechars:12 }}...</li>
+                            <li><strong>User:</strong> {{ session.user.username }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>🛡️ Security Notes</h6>
+                        <ul class="small">
+                            <li>JWT tokens are stateless and secure</li>
+                            <li>Sessions track device and location</li>
+                            <li>Tokens automatically expire</li>
+                            <li>Terminated sessions cannot be reused</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for session termination -->
+<form id="terminateForm" method="post" action="{% url 'jwt_auth:session_management' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="terminate_session">
+    <input type="hidden" name="session_id" value="{{ session.session_id }}">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function terminateSession() {
+    if (confirm(`Are you sure you want to terminate this session? {% if is_current %}This will log you out.{% endif %}`)) {
+        document.getElementById('terminateForm').submit();
+    }
+}
+
+{% if is_current %}
+function testCurrentSession() {
+    const resultDiv = document.getElementById('api-test-result');
+    resultDiv.innerHTML = '<div class="alert alert-info alert-sm">Testing API call...</div>';
+    
+    // Get JWT token from session storage or make API call
+    fetch('/jwt/api/user/', {
+        credentials: 'include'  // Include session cookies
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.user_id) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success alert-sm">
+                    <strong>✅ API Success</strong><br>
+                    User: ${data.username}<br>
+                    Active Sessions: ${data.active_sessions}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <strong>❌ API Error</strong><br>
+                    ${data.error || 'Authentication failed'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger alert-sm">
+                <strong>❌ Request Failed</strong><br>
+                ${error.message}
+            </div>
+        `;
+    });
+}
+{% endif %}
+</script>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 17px;
+    width: 2px;
+    height: calc(100% + 5px);
+    background-color: #dee2e6;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.timeline-text {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

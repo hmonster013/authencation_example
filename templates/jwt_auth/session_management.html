@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}JWT Authentication - Session Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>🔧 JWT Session Management</h1>
+        <p class="text-muted">Manage and monitor your JWT sessions across devices</p>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5>⚠️ Session Security Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🔒 Security Actions</h6>
+                        <p class="small">Use these actions to secure your account:</p>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="terminate_all">
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to terminate ALL active sessions? This will log you out from all devices.')">
+                                🚫 Terminate All Sessions
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>📋 When to Use</h6>
+                        <ul class="small">
+                            <li>Suspicious activity detected</li>
+                            <li>Lost or stolen device</li>
+                            <li>Shared computer usage</li>
+                            <li>Security breach concern</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>🔑 Your JWT Sessions</h5>
+                <div>
+                    <span class="badge bg-info">{{ user_sessions.count }} Total Sessions</span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if user_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Session Info</th>
+                                    <th>Device & Browser</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in user_sessions %}
+                                <tr {% if session.session_id|stringformat:"s" == current_session_id %}class="table-success"{% endif %}>
+                                    <td>
+                                        <div class="small">
+                                            <strong>ID:</strong> <code>{{ session.session_id|truncatechars:12 }}...</code><br>
+                                            {% if session.session_id|stringformat:"s" == current_session_id %}
+                                                <span class="badge bg-success">Current Session</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="small">
+                                        {% if session.device_info.browser %}
+                                            <strong>{{ session.device_info.browser }}</strong><br>
+                                            <span class="text-muted">{{ session.device_info.os }}</span><br>
+                                            {% if session.device_info.is_mobile %}
+                                                📱 Mobile Device
+                                            {% elif session.device_info.is_tablet %}
+                                                📱 Tablet
+                                            {% else %}
+                                                💻 Desktop
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Unknown Device</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        <strong>IP:</strong> {{ session.ip_address }}<br>
+                                        <span class="text-muted">{{ session.created_at|date:"M d, Y" }}</span>
+                                    </td>
+                                    <td>
+                                        {% if session.is_active and not session.is_expired %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% elif session.is_expired %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Terminated</span>
+                                        {% endif %}
+                                        {% if session.logout_at %}
+                                            <br><small class="text-muted">Ended: {{ session.logout_at|date:"M d, H:i" }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        <strong>Created:</strong><br>{{ session.created_at|date:"M d, H:i:s" }}<br>
+                                        <strong>Last Activity:</strong><br>{{ session.last_activity|date:"M d, H:i:s" }}<br>
+                                        <strong>Expires:</strong><br>{{ session.expires_at|date:"M d, H:i:s" }}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical" role="group">
+                                            <a href="{% url 'jwt_auth:session_detail' session.session_id %}" 
+                                               class="btn btn-outline-info btn-sm">
+                                                👁️ View Details
+                                            </a>
+                                            
+                                            {% if session.is_active and not session.is_expired %}
+                                                <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                        onclick="terminateSession('{{ session.session_id }}', '{{ session.device_info.browser|default:"Unknown Device" }}')">
+                                                    🚫 Terminate
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No sessions found</h5>
+                        <p class="text-muted">You haven't created any JWT sessions yet.</p>
+                        <a href="{% url 'jwt_auth:login' %}" class="btn btn-primary">Create Your First Session</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>📚 Session Management Guide</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🔍 Understanding Sessions</h6>
+                        <ul class="small">
+                            <li><strong>Session ID:</strong> Unique identifier for each login session</li>
+                            <li><strong>Device Info:</strong> Browser and operating system details</li>
+                            <li><strong>IP Address:</strong> Location where the session was created</li>
+                            <li><strong>Status:</strong> Current state of the session</li>
+                            <li><strong>Activity:</strong> Creation, last use, and expiration times</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">🔒 Security Best Practices</h6>
+                        <ul class="small">
+                            <li>Regularly review active sessions</li>
+                            <li>Terminate sessions from unknown devices</li>
+                            <li>Monitor for suspicious IP addresses</li>
+                            <li>Use "Terminate All" if security is compromised</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>📊 Session Status Meanings</h6>
+                        <ul class="small">
+                            <li><span class="badge bg-success">Active</span> - Session is currently valid and usable</li>
+                            <li><span class="badge bg-danger">Expired</span> - Session has passed its expiration time</li>
+                            <li><span class="badge bg-secondary">Terminated</span> - Session was manually ended</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">⚠️ Security Alerts</h6>
+                        <div class="alert alert-warning alert-sm">
+                            <strong>Watch for:</strong>
+                            <ul class="small mb-0">
+                                <li>Sessions from unfamiliar locations</li>
+                                <li>Multiple sessions from different countries</li>
+                                <li>Sessions created at unusual times</li>
+                                <li>Unknown device types or browsers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for session termination -->
+<form id="terminateForm" method="post" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="terminate_session">
+    <input type="hidden" name="session_id" id="terminateSessionId">
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function terminateSession(sessionId, deviceName) {
+    if (confirm(`Are you sure you want to terminate the session from "${deviceName}"? This action cannot be undone.`)) {
+        document.getElementById('terminateSessionId').value = sessionId;
+        document.getElementById('terminateForm').submit();
+    }
+}
+</script>
+{% endblock %}
