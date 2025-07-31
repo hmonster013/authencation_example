@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Basic Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>👤 User Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="mb-3">
+                            <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center"
+                                 style="width: 100px; height: 100px; font-size: 2rem; color: white;">
+                                {{ user.username|first|upper }}
+                            </div>
+                        </div>
+                        <h5>{{ user.username }}</h5>
+                        <p class="text-muted">{{ user.email|default:"No email provided" }}</p>
+                    </div>
+                    <div class="col-md-8">
+                        <h6>Account Details</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>{{ user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ user.email|default:"Not provided" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>First Name:</strong></td>
+                                <td>{{ user.first_name|default:"Not provided" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Name:</strong></td>
+                                <td>{{ user.last_name|default:"Not provided" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date Joined:</strong></td>
+                                <td>{{ user.date_joined|date:"F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Login:</strong></td>
+                                <td>{{ user.last_login|date:"F d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Account Status:</strong></td>
+                                <td>
+                                    {% if user.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>Permissions & Groups</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Staff Status:</strong>
+                                    {% if user.is_staff %}
+                                        <span class="badge bg-info">Staff Member</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Regular User</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Superuser:</strong>
+                                    {% if user.is_superuser %}
+                                        <span class="badge bg-warning">Superuser</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Regular User</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Groups:</strong></p>
+                                {% if user.groups.all %}
+                                    <ul class="list-unstyled">
+                                        {% for group in user.groups.all %}
+                                            <li><span class="badge bg-primary">{{ group.name }}</span></li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted">No groups assigned</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <a href="{% url 'basic_auth:dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+                    <a href="{% url 'basic_auth:home' %}" class="btn btn-outline-secondary">Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6>Account Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="showEditForm()">Edit Profile</button>
+                    <button class="btn btn-outline-info" onclick="changePassword()">Change Password</button>
+                    <button class="btn btn-outline-warning" onclick="downloadData()">Download My Data</button>
+                    <a href="{% url 'basic_auth:logout' %}" class="btn btn-outline-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Security Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Session ID:</strong></p>
+                <code class="small">{{ request.session.session_key }}</code>
+
+                <p class="mt-3"><strong>User Agent:</strong></p>
+                <small class="text-muted">{{ request.META.HTTP_USER_AGENT|truncatechars:50 }}</small>
+
+                <p class="mt-3"><strong>IP Address:</strong></p>
+                <code>{{ request.META.REMOTE_ADDR }}</code>
+
+                <div class="mt-3">
+                    <button class="btn btn-sm btn-outline-warning" onclick="clearSessions()">Clear All Sessions</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-info">Profile editing functionality would be implemented here.</p>
+                <p>This would include forms to update:</p>
+                <ul>
+                    <li>First Name & Last Name</li>
+                    <li>Email Address</li>
+                    <li>Profile Picture</li>
+                    <li>Other user preferences</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showEditForm() {
+    const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+    modal.show();
+}
+
+function changePassword() {
+    alert('Password change functionality would redirect to a password change form.');
+}
+
+function downloadData() {
+    const userData = {
+        username: '{{ user.username }}',
+        email: '{{ user.email }}',
+        first_name: '{{ user.first_name }}',
+        last_name: '{{ user.last_name }}',
+        date_joined: '{{ user.date_joined|date:"c" }}',
+        last_login: '{{ user.last_login|date:"c" }}',
+        is_staff: {{ user.is_staff|yesno:"true,false" }},
+        is_superuser: {{ user.is_superuser|yesno:"true,false" }}
+    };
+
+    const dataStr = JSON.stringify(userData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'my_profile_data.json';
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+function clearSessions() {
+    if (confirm('This will log you out from all devices. Continue?')) {
+        alert('Session clearing functionality would be implemented here.');
+    }
+}
+</script>
+{% endblock %}

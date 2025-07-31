@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+
+{% block title %}Basic Authentication - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mb-4">Authentication Methods Demo</h1>
+        <p class="text-center text-muted">This project demonstrates different authentication methods in Django</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="auth-method">
+            <h3>🔐 Basic Authentication</h3>
+            <p>Traditional username/password authentication using Django's built-in auth system.</p>
+            <ul>
+                <li>Session-based authentication</li>
+                <li>CSRF protection</li>
+                <li>Built-in user management</li>
+                <li>Login/Logout/Registration</li>
+            </ul>
+            {% if user.is_authenticated %}
+                <a href="{% url 'basic_auth:dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+                <a href="{% url 'basic_auth:profile' %}" class="btn btn-outline-primary">View Profile</a>
+            {% else %}
+                <a href="{% url 'basic_auth:login' %}" class="btn btn-primary">Login</a>
+                <a href="{% url 'basic_auth:register' %}" class="btn btn-outline-primary">Register</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="auth-method">
+            <h3>🎫 JWT Authentication</h3>
+            <p>JSON Web Token based authentication for stateless API access.</p>
+            <ul>
+                <li>Stateless authentication</li>
+                <li>Access & Refresh tokens</li>
+                <li>API-friendly</li>
+                <li>Mobile app support</li>
+            </ul>
+            <a href="/jwt/" class="btn btn-success">Try JWT Auth</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="auth-method">
+            <h3>🔑 OAuth Authentication</h3>
+            <p>Third-party authentication using Google, GitHub, etc.</p>
+            <ul>
+                <li>Social login</li>
+                <li>No password management</li>
+                <li>Trusted providers</li>
+                <li>Quick registration</li>
+            </ul>
+            <a href="/oauth/" class="btn btn-info">Try OAuth</a>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="auth-method">
+            <h3>🎟️ Token Authentication</h3>
+            <p>Simple token-based authentication for API access.</p>
+            <ul>
+                <li>API tokens</li>
+                <li>Simple implementation</li>
+                <li>Per-user tokens</li>
+                <li>REST API friendly</li>
+            </ul>
+            <a href="/token/" class="btn btn-warning">Try Token Auth</a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="auth-method">
+            <h3>🍪 Cookie-Based Authentication</h3>
+            <p>Session-based authentication using secure cookies.</p>
+            <ul>
+                <li>Server-side sessions</li>
+                <li>Secure cookies</li>
+                <li>Traditional web apps</li>
+                <li>CSRF protection</li>
+            </ul>
+            <a href="/cookie/" class="btn btn-secondary">Try Cookie Auth</a>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="auth-method">
+            <h3>📊 Authentication Status</h3>
+            <p>Check your current authentication status across all methods.</p>
+            <div id="auth-status">
+                <p>Loading...</p>
+            </div>
+            <button class="btn btn-outline-dark" onclick="checkAuthStatus()">Refresh Status</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkAuthStatus() {
+    fetch('/basic/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('auth-status');
+            if (data.authenticated) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ Authenticated</strong><br>
+                        Username: ${data.username}<br>
+                        User ID: ${data.user_id}
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <strong>❌ Not Authenticated</strong><br>
+                        Please log in to access protected resources.
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('auth-status').innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error checking status</strong>
+                </div>
+            `;
+        });
+}
+
+// Check status on page load
+document.addEventListener('DOMContentLoaded', checkAuthStatus);
+</script>
+{% endblock %}

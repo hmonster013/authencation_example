@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Basic Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="alert alert-success">
+            <h4>🎉 Welcome to your Dashboard!</h4>
+            <p>You have successfully logged in using Basic Authentication.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔐 Basic Authentication Dashboard</h5>
+            </div>
+            <div class="card-body">
+                <h6>User Information:</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Username:</strong> {{ user.username }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Email:</strong> {{ user.email|default:"Not provided" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>First Name:</strong> {{ user.first_name|default:"Not provided" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Last Name:</strong> {{ user.last_name|default:"Not provided" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Date Joined:</strong> {{ user.date_joined|date:"F d, Y" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Last Login:</strong> {{ user.last_login|date:"F d, Y H:i" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>User ID:</strong> {{ user.id }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Is Staff:</strong> {{ user.is_staff|yesno:"Yes,No" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Is Superuser:</strong> {{ user.is_superuser|yesno:"Yes,No" }}
+                    </li>
+                </ul>
+
+                <div class="mt-3">
+                    <a href="{% url 'basic_auth:profile' %}" class="btn btn-primary">View Profile</a>
+                    <a href="{% url 'basic_auth:home' %}" class="btn btn-outline-secondary">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6>Session Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Session Key:</strong></p>
+                <code>{{ request.session.session_key }}</code>
+
+                <p class="mt-3"><strong>Session Data:</strong></p>
+                <pre class="bg-light p-2 rounded">{{ request.session.items|pprint }}</pre>
+
+                <p class="mt-3"><strong>CSRF Token:</strong></p>
+                <code>{% csrf_token %}</code>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6>Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info" onclick="checkAuthStatus()">Check Auth Status</button>
+                    <button class="btn btn-outline-warning" onclick="testProtectedEndpoint()">Test Protected API</button>
+                    <a href="{% url 'basic_auth:logout' %}" class="btn btn-outline-danger">Logout</a>
+                </div>
+
+                <div id="api-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h6>How Basic Authentication Works</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>✅ Advantages:</h6>
+                        <ul>
+                            <li>Simple to implement and understand</li>
+                            <li>Built into Django framework</li>
+                            <li>Automatic CSRF protection</li>
+                            <li>Server-side session management</li>
+                            <li>Good for traditional web applications</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>⚠️ Considerations:</h6>
+                        <ul>
+                            <li>Requires server-side session storage</li>
+                            <li>Not ideal for mobile apps or SPAs</li>
+                            <li>Sessions can expire</li>
+                            <li>Requires cookies to be enabled</li>
+                            <li>Not stateless</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkAuthStatus() {
+    fetch('/basic/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('api-result').innerHTML = `
+                <div class="alert alert-info">
+                    <strong>Auth Status:</strong><br>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('api-result').innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> ${error.message}
+                </div>
+            `;
+        });
+}
+
+function testProtectedEndpoint() {
+    // This would be a protected API endpoint
+    document.getElementById('api-result').innerHTML = `
+        <div class="alert alert-success">
+            <strong>Protected Endpoint Access:</strong><br>
+            ✅ You have access to this protected resource because you are authenticated!
+        </div>
+    `;
+}
+</script>
+{% endblock %}
