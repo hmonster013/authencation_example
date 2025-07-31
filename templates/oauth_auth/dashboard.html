@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block title %}OAuth Authentication - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>🔗 OAuth Dashboard</h1>
+        <p class="text-muted">Welcome back, {{ user.username }}! Manage your OAuth accounts and sessions here.</p>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">{{ total_sessions }}</h5>
+                <p class="card-text">Total Sessions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-success">{{ active_sessions }}</h5>
+                <p class="card-text">Active Sessions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title text-info">{{ total_providers }}</h5>
+                <p class="card-text">Connected Providers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <a href="{% url 'oauth_auth:account_management' %}" class="btn btn-primary">Manage Accounts</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5>🔗 Connected OAuth Accounts</h5>
+            </div>
+            <div class="card-body">
+                {% if connected_accounts %}
+                    <div class="row">
+                        {% for account in connected_accounts %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="card-title">
+                                                {% if account.provider == 'google' %}
+                                                    📧 Google Account
+                                                {% elif account.provider == 'github' %}
+                                                    🐙 GitHub Account
+                                                {% else %}
+                                                    🔗 {{ account.provider|title }} Account
+                                                {% endif %}
+                                                {% if oauth_profile.preferred_provider == account.provider %}
+                                                    <span class="badge bg-primary">Preferred</span>
+                                                {% endif %}
+                                            </h6>
+                                            <p class="card-text small">
+                                                <strong>Email:</strong> {{ account.extra_data.email|default:"Not provided" }}<br>
+                                                <strong>Name:</strong> {{ account.extra_data.name|default:account.extra_data.login|default:"Not provided" }}<br>
+                                                <strong>Connected:</strong> {{ account.date_joined|date:"M d, Y" }}
+                                            </p>
+                                        </div>
+                                        <div class="text-end">
+                                            {% if account.provider == 'google' %}
+                                                <div class="text-danger">📧</div>
+                                            {% elif account.provider == 'github' %}
+                                                <div class="text-dark">🐙</div>
+                                            {% else %}
+                                                <div class="text-secondary">🔗</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No OAuth accounts connected</h5>
+                        <p class="text-muted">Connect your first OAuth account to get started.</p>
+                        <a href="{% url 'oauth_auth:account_management' %}" class="btn btn-primary">Connect Account</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>📊 Your OAuth Sessions</h5>
+                <div>
+                    <a href="{% url 'oauth_auth:account_management' %}" class="btn btn-outline-primary btn-sm">Manage Accounts</a>
+                    <a href="{% url 'oauth_auth:profile' %}" class="btn btn-outline-secondary btn-sm">View Profile</a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if page_obj %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Provider</th>
+                                    <th>Session ID</th>
+                                    <th>Login Method</th>
+                                    <th>Status</th>
+                                    <th>Login Time</th>
+                                    <th>IP Address</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in page_obj %}
+                                <tr>
+                                    <td>
+                                        {% if session.provider == 'google' %}
+                                            📧 Google
+                                        {% elif session.provider == 'github' %}
+                                            🐙 GitHub
+                                        {% else %}
+                                            🔗 {{ session.provider|title }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        <code>{{ session.session_id|truncatechars:12 }}...</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if session.login_method == 'oauth_new' %}success{% elif session.login_method == 'oauth_existing' %}primary{% else %}info{% endif %}">
+                                            {% if session.login_method == 'oauth_new' %}
+                                                New User
+                                            {% elif session.login_method == 'oauth_existing' %}
+                                                Existing User
+                                            {% else %}
+                                                Account Connect
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if session.is_active %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Ended</span>
+                                        {% endif %}
+                                        {% if session.is_token_expired %}
+                                            <br><small class="text-warning">Token Expired</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ session.login_timestamp|date:"M d, H:i:s" }}</td>
+                                    <td class="small">{{ session.ip_address }}</td>
+                                    <td>
+                                        <a href="{% url 'oauth_auth:session_detail' session.session_id %}" class="btn btn-outline-info btn-sm">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Session pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">&laquo; First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No sessions found</h5>
+                        <p class="text-muted">You haven't created any OAuth sessions yet.</p>
+                        <a href="{% url 'oauth_auth:home' %}" class="btn btn-primary">Login with OAuth</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>🚀 Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:account_management' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-link"></i> Manage Accounts
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:app_connections' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-apps"></i> App Connections
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:profile' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:logout' %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

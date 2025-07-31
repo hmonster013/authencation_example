@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}OAuth Authentication - Account Management{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>🔧 OAuth Account Management</h1>
+        <p class="text-muted">Connect, disconnect, and manage your OAuth accounts</p>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔗 Connect New Account</h5>
+            </div>
+            <div class="card-body">
+                {% if available_providers %}
+                    <p class="small">Connect additional OAuth accounts to your profile:</p>
+                    <div class="d-grid gap-2">
+                        {% for provider in available_providers %}
+                            {% if not connected_accounts or provider.provider not in connected_accounts|join:"," %}
+                                <a href="/oauth/accounts/{{ provider.provider }}/login/" class="btn btn-outline-primary">
+                                    {% if provider.provider == 'google' %}
+                                        📧 Connect Google Account
+                                    {% elif provider.provider == 'github' %}
+                                        🐙 Connect GitHub Account
+                                    {% else %}
+                                        🔗 Connect {{ provider.provider|title }} Account
+                                    {% endif %}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <strong>⚠️ No OAuth providers available</strong><br>
+                        Please configure OAuth providers in Django admin.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>⚙️ OAuth Preferences</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="set_preferred_provider">
+                    
+                    <div class="mb-3">
+                        <label for="preferred_provider" class="form-label">Preferred Provider:</label>
+                        <select class="form-select" id="preferred_provider" name="provider">
+                            <option value="">No preference</option>
+                            {% for account in connected_accounts %}
+                                <option value="{{ account.provider }}" {% if oauth_profile.preferred_provider == account.provider %}selected{% endif %}>
+                                    {% if account.provider == 'google' %}
+                                        📧 Google
+                                    {% elif account.provider == 'github' %}
+                                        🐙 GitHub
+                                    {% else %}
+                                        🔗 {{ account.provider|title }}
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Your preferred OAuth provider for automatic login suggestions.</div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Update Preference</button>
+                </form>
+                
+                <hr>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="toggle_auto_login">
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="auto_login" {% if oauth_profile.auto_login_enabled %}checked{% endif %} onchange="this.form.submit()">
+                        <label class="form-check-label" for="auto_login">
+                            Enable auto-login with preferred provider
+                        </label>
+                        <div class="form-text">Automatically redirect to your preferred OAuth provider on login page.</div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🔒 Privacy Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_privacy">
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="share_email" name="share_email" {% if oauth_profile.share_email %}checked{% endif %}>
+                        <label class="form-check-label" for="share_email">
+                            Allow sharing email with connected apps
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="share_profile" name="share_profile" {% if oauth_profile.share_profile %}checked{% endif %}>
+                        <label class="form-check-label" for="share_profile">
+                            Allow sharing profile information with connected apps
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Update Privacy Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>🔗 Connected Accounts</h5>
+            </div>
+            <div class="card-body">
+                {% if connected_accounts %}
+                    {% for account in connected_accounts %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title">
+                                        {% if account.provider == 'google' %}
+                                            📧 Google Account
+                                        {% elif account.provider == 'github' %}
+                                            🐙 GitHub Account
+                                        {% else %}
+                                            🔗 {{ account.provider|title }} Account
+                                        {% endif %}
+                                        {% if oauth_profile.preferred_provider == account.provider %}
+                                            <span class="badge bg-primary">Preferred</span>
+                                        {% endif %}
+                                    </h6>
+                                    <p class="card-text small">
+                                        <strong>Email:</strong> {{ account.extra_data.email|default:"Not provided" }}<br>
+                                        <strong>Name:</strong> {{ account.extra_data.name|default:account.extra_data.login|default:"Not provided" }}<br>
+                                        <strong>Connected:</strong> {{ account.date_joined|date:"M d, Y H:i" }}<br>
+                                        <strong>Provider ID:</strong> <code>{{ account.uid|truncatechars:20 }}</code>
+                                    </p>
+                                </div>
+                                <div class="text-end">
+                                    <form method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="disconnect_account">
+                                        <input type="hidden" name="account_id" value="{{ account.id }}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                onclick="return confirm('Are you sure you want to disconnect this {{ account.provider }} account?')">
+                                            🗑️ Disconnect
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <h5>No accounts connected</h5>
+                        <p class="text-muted">Connect your first OAuth account using the options on the left.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if connected_accounts %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📊 Account Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ connected_accounts.count }}</h4>
+                        <small>Connected Accounts</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ connected_accounts|length }}</h4>
+                        <small>Active Providers</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="small">
+                    <strong>Providers:</strong><br>
+                    {% for account in connected_accounts %}
+                        • {{ account.provider|title }}{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>📚 OAuth Account Management Guide</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>🔗 Connecting Accounts</h6>
+                        <ul class="small">
+                            <li><strong>Multiple Providers:</strong> Connect accounts from different OAuth providers</li>
+                            <li><strong>Email Matching:</strong> Accounts with same email are automatically linked</li>
+                            <li><strong>Preferred Provider:</strong> Set your favorite provider for quick access</li>
+                            <li><strong>Auto-login:</strong> Enable automatic redirection to preferred provider</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">🔒 Privacy Controls</h6>
+                        <ul class="small">
+                            <li>Control what information is shared with connected apps</li>
+                            <li>Email sharing can be disabled for privacy</li>
+                            <li>Profile information sharing is user-controlled</li>
+                            <li>Settings apply to all connected accounts</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>⚠️ Security Considerations</h6>
+                        <ul class="small">
+                            <li><strong>Account Linking:</strong> Only link accounts you control</li>
+                            <li><strong>Regular Review:</strong> Periodically review connected accounts</li>
+                            <li><strong>Disconnect Unused:</strong> Remove accounts you no longer use</li>
+                            <li><strong>Monitor Activity:</strong> Check session logs for suspicious activity</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">🚀 Best Practices</h6>
+                        <ul class="small">
+                            <li>Use strong, unique passwords for OAuth provider accounts</li>
+                            <li>Enable 2FA on your OAuth provider accounts</li>
+                            <li>Keep your OAuth provider accounts secure</li>
+                            <li>Review app permissions regularly</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>🚀 Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:dashboard' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:app_connections' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-apps"></i> App Connections
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:profile' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'oauth_auth:home' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

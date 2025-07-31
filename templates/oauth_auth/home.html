@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+
+{% block title %}OAuth Authentication - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mb-4">🔗 OAuth Authentication</h1>
+        <p class="text-center text-muted">Third-party authentication with Google, GitHub, and more</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="auth-method">
+            <h3>🔗 OAuth Authentication Features</h3>
+            <p>This implementation demonstrates comprehensive OAuth-based authentication using django-allauth with advanced session management and security monitoring.</p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>🌐 OAuth Features</h5>
+                    <ul>
+                        <li><strong>Multiple Providers</strong> - Google, GitHub, and more</li>
+                        <li><strong>Account Linking</strong> - Connect multiple OAuth accounts</li>
+                        <li><strong>Session Management</strong> - Track OAuth sessions across devices</li>
+                        <li><strong>Profile Management</strong> - Unified user profile from OAuth data</li>
+                        <li><strong>App Connections</strong> - Manage third-party app permissions</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>🛡️ Security Features</h5>
+                    <ul>
+                        <li><strong>Security Logging</strong> - Comprehensive audit trail</li>
+                        <li><strong>Device Tracking</strong> - Monitor login devices and locations</li>
+                        <li><strong>Permission Management</strong> - Fine-grained access control</li>
+                        <li><strong>Auto-linking</strong> - Smart account connection by email</li>
+                        <li><strong>Privacy Controls</strong> - User-controlled data sharing</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                {% if user.is_authenticated %}
+                    <div class="alert alert-success">
+                        <strong>✅ You are logged in!</strong><br>
+                        Welcome back, {{ user.username }}! You have {{ user_accounts.count }} connected OAuth account{{ user_accounts.count|pluralize }}.
+                    </div>
+                    
+                    {% if user_accounts %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6>🔗 Your Connected Accounts</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for account in user_accounts %}
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex align-items-center">
+                                        {% if account.provider == 'google' %}
+                                            <span class="badge bg-danger me-2">📧 Google</span>
+                                        {% elif account.provider == 'github' %}
+                                            <span class="badge bg-dark me-2">🐙 GitHub</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary me-2">🔗 {{ account.provider|title }}</span>
+                                        {% endif %}
+                                        <small class="text-muted">{{ account.extra_data.email|default:account.uid }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if recent_sessions %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6>📊 Recent OAuth Sessions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Provider</th>
+                                            <th>Login Time</th>
+                                            <th>IP Address</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for session in recent_sessions %}
+                                        <tr>
+                                            <td>
+                                                {% if session.provider == 'google' %}
+                                                    📧 Google
+                                                {% elif session.provider == 'github' %}
+                                                    🐙 GitHub
+                                                {% else %}
+                                                    🔗 {{ session.provider|title }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="small">{{ session.login_timestamp|date:"M d, H:i" }}</td>
+                                            <td class="small">{{ session.ip_address }}</td>
+                                            <td>
+                                                {% if session.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Ended</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'oauth_auth:dashboard' %}" class="btn btn-primary me-2">OAuth Dashboard</a>
+                        <a href="{% url 'oauth_auth:account_management' %}" class="btn btn-outline-primary me-2">Manage Accounts</a>
+                        <a href="{% url 'oauth_auth:profile' %}" class="btn btn-outline-secondary me-2">Profile</a>
+                        <a href="{% url 'oauth_auth:logout' %}" class="btn btn-outline-danger">Logout</a>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <strong>ℹ️ Not authenticated</strong><br>
+                        Please log in with one of the available OAuth providers.
+                    </div>
+                    
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5>🚀 Login with OAuth</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if available_providers %}
+                                <div class="row">
+                                    {% for provider in available_providers %}
+                                    <div class="col-md-6 mb-2">
+                                        <a href="/oauth/accounts/{{ provider.provider }}/login/" class="btn btn-outline-primary w-100">
+                                            {% if provider.provider == 'google' %}
+                                                📧 Login with Google
+                                            {% elif provider.provider == 'github' %}
+                                                🐙 Login with GitHub
+                                            {% else %}
+                                                🔗 Login with {{ provider.provider|title }}
+                                            {% endif %}
+                                        </a>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <strong>⚠️ No OAuth providers configured</strong><br>
+                                    Please configure OAuth providers in Django admin.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>📊 OAuth Status</h5>
+            </div>
+            <div class="card-body">
+                <div id="oauth-status">
+                    <p>Loading OAuth status...</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" onclick="checkOAuthStatus()">Refresh Status</button>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>📚 OAuth API Documentation</h5>
+            </div>
+            <div class="card-body">
+                <h6>Available Endpoints:</h6>
+                <ul class="small">
+                    <li><code>GET /oauth/api/user/</code> - User profile</li>
+                    <li><code>GET /oauth/api/sessions/</code> - OAuth sessions</li>
+                    <li><code>POST /oauth/api/disconnect/</code> - Disconnect account</li>
+                    <li><code>POST /oauth/api/sessions/end/</code> - End session</li>
+                    <li><code>GET /oauth/api/status/</code> - OAuth status</li>
+                </ul>
+                
+                <h6 class="mt-3">Authentication:</h6>
+                <p class="small">Use Django session authentication or include session cookies.</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>🧪 Test OAuth API</h5>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    <button class="btn btn-outline-success btn-sm" onclick="testOAuthAPI()">Test API Call</button>
+                    <div id="oauth-result" class="mt-2"></div>
+                {% else %}
+                    <p class="small text-muted">Login to test OAuth API</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>🔗 Other Authentication Methods</h4>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🔐 Basic Auth</h6>
+                        <a href="/basic/" class="btn btn-outline-primary btn-sm">Try Basic</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🍪 Cookie Auth</h6>
+                        <a href="/cookie/" class="btn btn-outline-secondary btn-sm">Try Cookie</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎟️ Token Auth</h6>
+                        <a href="/token/" class="btn btn-outline-info btn-sm">Try Token</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6>🎫 JWT Auth</h6>
+                        <a href="/jwt/" class="btn btn-outline-warning btn-sm">Try JWT</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function checkOAuthStatus() {
+    fetch('/oauth/api/status/')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('oauth-status');
+            let statusHtml = '';
+            
+            if (data.session_authenticated) {
+                statusHtml += `
+                    <div class="alert alert-success alert-sm">
+                        <strong>✅ Session Active</strong><br>
+                        User: ${data.username} (ID: ${data.user_id})
+                    </div>
+                `;
+                
+                if (data.connected_providers && data.connected_providers.length > 0) {
+                    statusHtml += `
+                        <div class="small">
+                            <strong>Connected Providers:</strong><br>
+                            ${data.connected_providers.map(p => `• ${p}`).join('<br>')}
+                        </div>
+                    `;
+                }
+                
+                if (data.preferred_provider) {
+                    statusHtml += `
+                        <div class="small mt-2">
+                            <strong>Preferred:</strong> ${data.preferred_provider}<br>
+                            <strong>Auto-login:</strong> ${data.auto_login_enabled ? '✅' : '❌'}
+                        </div>
+                    `;
+                }
+            } else {
+                statusHtml += `
+                    <div class="alert alert-warning alert-sm">
+                        <strong>❌ No Session</strong>
+                    </div>
+                `;
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('oauth-status').innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <strong>Error checking status</strong>
+                </div>
+            `;
+        });
+}
+
+function testOAuthAPI() {
+    const resultDiv = document.getElementById('oauth-result');
+    
+    fetch('/oauth/api/user/', {
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.user_id) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success alert-sm">
+                    <strong>✅ OAuth API Success</strong><br>
+                    User: ${data.username}<br>
+                    Providers: ${data.connected_accounts.length}<br>
+                    Sessions: ${data.active_sessions.length}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger alert-sm">
+                    <strong>❌ OAuth API Error</strong><br>
+                    ${data.error || 'Authentication failed'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger alert-sm">
+                <strong>❌ Request Failed</strong><br>
+                ${error.message}
+            </div>
+        `;
+    });
+}
+
+// Check status on page load
+document.addEventListener('DOMContentLoaded', checkOAuthStatus);
+
+// Auto-refresh every 30 seconds
+setInterval(checkOAuthStatus, 30000);
+</script>
+{% endblock %}
