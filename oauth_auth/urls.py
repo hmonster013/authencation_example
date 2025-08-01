@@ -23,6 +23,9 @@ urlpatterns = [
     # Status endpoint
     path('api/status/', views.oauth_auth_status, name='auth_status'),
 
-    # Include allauth URLs for OAuth providers
-    path('accounts/', include('allauth.urls')),
+    # Direct OAuth login (bypass allauth intermediate page)
+    path('direct/google/', views.direct_google_login, name='direct_google_login'),
+    path('direct/github/', views.direct_github_login, name='direct_github_login'),
+
+    # Note: allauth URLs are included in main urls.py at /accounts/
 ]

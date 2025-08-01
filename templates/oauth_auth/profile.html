@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}OAuth Profile - Django Authentication{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>👤 OAuth Profile</h1>
+        <p class="text-muted">Manage your OAuth profile and connected accounts</p>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user me-2"></i>Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Username:</strong></td>
+                                <td>{{ user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ user.email|default:"Not provided" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>First Name:</strong></td>
+                                <td>{{ user.first_name|default:"Not provided" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Name:</strong></td>
+                                <td>{{ user.last_name|default:"Not provided" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date Joined:</strong></td>
+                                <td>{{ user.date_joined|date:"M d, Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Last Login:</strong></td>
+                                <td>{{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>OAuth Settings</h6>
+                        {% if oauth_profile %}
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Preferred Provider:</strong></td>
+                                <td>
+                                    {% if oauth_profile.preferred_provider %}
+                                        <span class="badge bg-primary">{{ oauth_profile.preferred_provider|title }}</span>
+                                    {% else %}
+                                        <span class="text-muted">None set</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Auto Login:</strong></td>
+                                <td>
+                                    {% if oauth_profile.auto_login_enabled %}
+                                        <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Disabled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Profile Completed:</strong></td>
+                                <td>
+                                    {% if oauth_profile.profile_completed %}
+                                        <span class="badge bg-success">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Share Email:</strong></td>
+                                <td>
+                                    {% if oauth_profile.share_email %}
+                                        <span class="badge bg-info">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Share Profile:</strong></td>
+                                <td>
+                                    {% if oauth_profile.share_profile %}
+                                        <span class="badge bg-info">Yes</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                        {% else %}
+                        <p class="text-muted">OAuth profile not configured</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if connected_accounts %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-link me-2"></i>Connected OAuth Accounts</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for account in connected_accounts %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    {% if account.provider == 'google' %}
+                                        <i class="fab fa-google text-danger me-2"></i>Google Account
+                                    {% elif account.provider == 'github' %}
+                                        <i class="fab fa-github text-dark me-2"></i>GitHub Account
+                                    {% else %}
+                                        <i class="fas fa-link text-primary me-2"></i>{{ account.provider|title }} Account
+                                    {% endif %}
+                                </h6>
+                                
+                                <div class="small">
+                                    <strong>Provider ID:</strong> {{ account.uid }}<br>
+                                    <strong>Connected:</strong> {{ account.date_joined|date:"M d, Y" }}<br>
+                                    
+                                    {% if account.extra_data.email %}
+                                        <strong>Email:</strong> {{ account.extra_data.email }}<br>
+                                    {% endif %}
+                                    
+                                    {% if account.extra_data.name %}
+                                        <strong>Name:</strong> {{ account.extra_data.name }}<br>
+                                    {% elif account.extra_data.login %}
+                                        <strong>Username:</strong> {{ account.extra_data.login }}<br>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if recent_sessions %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-history me-2"></i>Recent OAuth Sessions</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Login Time</th>
+                                <th>IP Address</th>
+                                <th>Status</th>
+                                <th>Method</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>
+                                    {% if session.provider == 'google' %}
+                                        <i class="fab fa-google text-danger me-1"></i>Google
+                                    {% elif session.provider == 'github' %}
+                                        <i class="fab fa-github text-dark me-1"></i>GitHub
+                                    {% else %}
+                                        <i class="fas fa-link me-1"></i>{{ session.provider|title }}
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ session.login_timestamp|date:"M d, H:i" }}</td>
+                                <td class="small">{{ session.ip_address }}</td>
+                                <td>
+                                    {% if session.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Ended</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ session.login_method }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cog me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'oauth_auth:account_management' %}" class="btn btn-primary">
+                        <i class="fas fa-link me-1"></i>Manage Accounts
+                    </a>
+                    <a href="{% url 'oauth_auth:dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                    <a href="{% url 'oauth_auth:app_connections' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-apps me-1"></i>App Connections
+                    </a>
+                    <a href="{% url 'oauth_auth:home' %}" class="btn btn-outline-success">
+                        <i class="fas fa-home me-1"></i>OAuth Home
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar me-2"></i>Profile Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ connected_accounts.count|default:0 }}</h4>
+                        <small>Connected Accounts</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ recent_sessions.count|default:0 }}</h4>
+                        <small>Recent Sessions</small>
+                    </div>
+                </div>
+                
+                {% if oauth_profile %}
+                <hr>
+                <div class="small">
+                    <strong>Profile Created:</strong><br>
+                    {{ oauth_profile.created_at|date:"M d, Y" }}
+                    
+                    {% if oauth_profile.profile_completion_date %}
+                    <br><strong>Completed:</strong><br>
+                    {{ oauth_profile.profile_completion_date|date:"M d, Y" }}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5><i class="fas fa-shield-alt me-2"></i>Security</h5>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>Account Security:</strong></p>
+                    <ul>
+                        <li>OAuth authentication active</li>
+                        <li>Session tracking enabled</li>
+                        <li>Login monitoring active</li>
+                        {% if oauth_profile.share_email %}
+                        <li>Email sharing enabled</li>
+                        {% endif %}
+                        {% if oauth_profile.share_profile %}
+                        <li>Profile sharing enabled</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

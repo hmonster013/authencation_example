@@ -31,15 +31,19 @@
                     <div class="d-grid gap-2">
                         {% for provider in available_providers %}
                             {% if not connected_accounts or provider.provider not in connected_accounts|join:"," %}
-                                <a href="/oauth/accounts/{{ provider.provider }}/login/" class="btn btn-outline-primary">
-                                    {% if provider.provider == 'google' %}
+                                {% if provider.provider == 'google' %}
+                                    <a href="{% url 'oauth_auth:direct_google_login' %}" class="btn btn-outline-primary">
                                         📧 Connect Google Account
-                                    {% elif provider.provider == 'github' %}
+                                    </a>
+                                {% elif provider.provider == 'github' %}
+                                    <a href="{% url 'oauth_auth:direct_github_login' %}" class="btn btn-outline-primary">
                                         🐙 Connect GitHub Account
-                                    {% else %}
+                                    </a>
+                                {% else %}
+                                    <a href="/accounts/{{ provider.provider }}/login/" class="btn btn-outline-primary">
                                         🔗 Connect {{ provider.provider|title }} Account
-                                    {% endif %}
-                                </a>
+                                    </a>
+                                {% endif %}
                             {% endif %}
                         {% endfor %}
                     </div>
@@ -155,7 +159,16 @@
                                     </h6>
                                     <p class="card-text small">
                                         <strong>Email:</strong> {{ account.extra_data.email|default:"Not provided" }}<br>
-                                        <strong>Name:</strong> {{ account.extra_data.name|default:account.extra_data.login|default:"Not provided" }}<br>
+                                        <strong>Name:</strong>
+                                        {% if account.extra_data.name %}
+                                            {{ account.extra_data.name }}
+                                        {% elif account.extra_data.login %}
+                                            {{ account.extra_data.login }}
+                                        {% elif account.extra_data.given_name or account.extra_data.family_name %}
+                                            {{ account.extra_data.given_name }} {{ account.extra_data.family_name }}
+                                        {% else %}
+                                            Not provided
+                                        {% endif %}<br>
                                         <strong>Connected:</strong> {{ account.date_joined|date:"M d, Y H:i" }}<br>
                                         <strong>Provider ID:</strong> <code>{{ account.uid|truncatechars:20 }}</code>
                                     </p>

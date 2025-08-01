@@ -251,7 +251,7 @@ python manage.py runserver
 - `/oauth/api/disconnect/` - API endpoint to disconnect OAuth accounts
 - `/oauth/api/sessions/end/` - API endpoint to end specific sessions
 - `/oauth/api/status/` - OAuth authentication status API
-- `/oauth/accounts/<provider>/login/` - Provider-specific OAuth login
+- `/accounts/<provider>/login/` - Provider-specific OAuth login
 
 ### Key Implementation Details
 
@@ -665,10 +665,10 @@ curl -X POST http://localhost:8000/jwt/api/logout/ \
 #### OAuth Provider Login
 ```bash
 # Google OAuth login (redirect to Google)
-curl -L http://localhost:8000/oauth/accounts/google/login/
+curl -L http://localhost:8000/accounts/google/login/
 
 # GitHub OAuth login (redirect to GitHub)
-curl -L http://localhost:8000/oauth/accounts/github/login/
+curl -L http://localhost:8000/accounts/github/login/
 ```
 
 #### OAuth API Usage
@@ -765,7 +765,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 | `POST` | `/oauth/api/sessions/end/` | End specific OAuth session | ✅ Session |
 | `POST` | `/oauth/api/sessions/end-all/` | End all OAuth sessions | ✅ Session |
 | `GET` | `/oauth/api/status/` | Check OAuth auth status | ❌ None |
-| `GET` | `/oauth/accounts/<provider>/login/` | OAuth provider login | ❌ None |
+| `GET` | `/accounts/<provider>/login/` | OAuth provider login | ❌ None |
 
 ### OAuth Authentication Header Format
 ```
@@ -951,15 +951,15 @@ python manage.py cleanup_jwt_tokens --days 60
 3. Enable Google+ API
 4. Create OAuth 2.0 credentials
 5. Add authorized redirect URIs:
-   - `http://localhost:8000/oauth/accounts/google/login/callback/`
-   - `http://127.0.0.1:8000/oauth/accounts/google/login/callback/`
+   - `http://localhost:8000/accounts/google/login/callback/`
+   - `http://127.0.0.1:8000/accounts/google/login/callback/`
 6. Add to Django admin as Social Application
 
 #### GitHub OAuth Setup
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Create a new OAuth App
 3. Set Authorization callback URL:
-   - `http://localhost:8000/oauth/accounts/github/login/callback/`
+   - `http://localhost:8000/accounts/github/login/callback/`
 4. Add to Django admin as Social Application
 
 #### Django Admin Configuration

@@ -82,7 +82,16 @@
                                             </h6>
                                             <p class="card-text small">
                                                 <strong>Email:</strong> {{ account.extra_data.email|default:"Not provided" }}<br>
-                                                <strong>Name:</strong> {{ account.extra_data.name|default:account.extra_data.login|default:"Not provided" }}<br>
+                                                <strong>Name:</strong>
+                                                {% if account.extra_data.name %}
+                                                    {{ account.extra_data.name }}
+                                                {% elif account.extra_data.login %}
+                                                    {{ account.extra_data.login }}
+                                                {% elif account.extra_data.given_name or account.extra_data.family_name %}
+                                                    {{ account.extra_data.given_name }} {{ account.extra_data.family_name }}
+                                                {% else %}
+                                                    Not provided
+                                                {% endif %}<br>
                                                 <strong>Connected:</strong> {{ account.date_joined|date:"M d, Y" }}
                                             </p>
                                         </div>

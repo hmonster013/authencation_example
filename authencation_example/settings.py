@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-d698xj^dwh+c%y&%ljxl#1qt5&mqy#=n@s%3!*2n!m&u&e#7)q"
+SECRET_KEY = config('SECRET_KEY', default="django-insecure-d698xj^dwh+c%y&%ljxl#1qt5&mqy#=n@s%3!*2n!m&u&e#7)q")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = []
 
@@ -135,6 +137,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -189,6 +192,15 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
+# Additional allauth settings for debugging
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = False
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Custom adapter for debugging
+SOCIALACCOUNT_ADAPTER = 'oauth_auth.adapters.DebugSocialAccountAdapter'
+
 # Social Auth settings (you'll need to add your own keys)
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -217,3 +229,42 @@ SESSION_SAVE_EVERY_REQUEST = True
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# OAuth Environment Variables
+# These will be used by the setup_oauth_providers management command
+GOOGLE_OAUTH_CLIENT_ID = config('GOOGLE_OAUTH_CLIENT_ID', default='')
+GOOGLE_OAUTH_CLIENT_SECRET = config('GOOGLE_OAUTH_CLIENT_SECRET', default='')
+GITHUB_OAUTH_CLIENT_ID = config('GITHUB_OAUTH_CLIENT_ID', default='')
+GITHUB_OAUTH_CLIENT_SECRET = config('GITHUB_OAUTH_CLIENT_SECRET', default='')
+
+# Site configuration
+SITE_ID = config('SITE_ID', default=1, cast=int)
+DOMAIN = config('DOMAIN', default='localhost:8000')
+
+# Logging configuration for debugging OAuth
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'allauth': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'oauth_auth': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}

@@ -13,6 +13,7 @@ from allauth.socialaccount.models import SocialAccount, SocialApp, SocialToken
 from allauth.socialaccount.helpers import complete_social_login
 from allauth.socialaccount import app_settings
 from allauth.account.utils import get_next_redirect_url
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -21,6 +22,54 @@ from .models import OAuthUserProfile, OAuthLoginSession, OAuthAppConnection, OAu
 import json
 import uuid
 from user_agents import parse
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+
+
+def direct_google_login(request):
+    """
+    Direct redirect to Google OAuth with auto-submit
+    """
+    # Create a simple auto-submit page
+    html = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Redirecting to Google...</title>
+        <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 20px auto; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
+    </head>
+    <body>
+        <h3>Redirecting to Google OAuth...</h3>
+        <div class="spinner"></div>
+        <p>Please wait while we redirect you to Google for authentication.</p>
+
+        <form method="post" action="/accounts/google/login/" id="oauth-form">
+            <input type="hidden" name="csrfmiddlewaretoken" value="''' + str(request.META.get('CSRF_COOKIE', request.COOKIES.get('csrftoken', ''))) + '''">
+        </form>
+
+        <script>
+            setTimeout(function() {
+                document.getElementById('oauth-form').submit();
+            }, 1000);
+        </script>
+    </body>
+    </html>
+    '''
+
+    from django.http import HttpResponse
+    return HttpResponse(html)
+
+
+def direct_github_login(request):
+    """
+    Direct redirect to GitHub OAuth using allauth properly
+    """
+    # Use allauth's proper OAuth flow instead of manual redirect
+    return redirect('/accounts/github/login/')
 
 
 # Utility functions
